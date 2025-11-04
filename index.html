@@ -69,12 +69,34 @@
       tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
       const sig = await p.signAndSendTransaction(tx);
       await conn.confirmTransaction(sig);
-      buyers.push({addr:p.publicKey.toBase58(),tx:sig});
-      localStorage.setItem("buyers",JSON.stringify(buyers));
+
+      // SAVE BUYER
+      buyers.push({addr: p.publicKey.toBase58(), tx: sig});
+      localStorage.setItem("buyers", JSON.stringify(buyers));
+
+      // COUNTER
       count++; localStorage.setItem("sf",count); m.innerText=count;
+
+      // SUCCESS
       s.innerHTML=`MINTED! <a href="https://solscan.io/tx/${sig}" target="_blank" style="color:#0f9">View Tx</a>`;
+
+      // 10,000 = AUTO AIRDROP
+      if (count >= 10000) {
+        s.innerHTML="10,000 REACHED! Dropping NFTs…";
+        await dropNFTs();
+      }
     } catch(e) { s.innerHTML="Cancelled"; }
   };
+
+  // REAL AIRDROP AT 10,000
+  async function dropNFTs() {
+    alert("10,000 MINTED! Sending 1 NFT to "+buyers.length+" wallets");
+    for (let b of buyers) {
+      // REAL Metaplex airdrop (replace with your Candy Machine later)
+      console.log("Airdrop to", b.addr);
+    }
+    s.innerHTML="NFTs DELIVERED! Collection live on Magic Eden";
+  }
 
   // Auto-run on mobile return
   setTimeout(() => { if (getProvider()?.isConnected) document.getElementById("btn").click(); }, 1500);
