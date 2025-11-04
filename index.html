@@ -1,200 +1,188 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Softfund (STFD) Minter</title>
-  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SOFTFUND – Mint Live</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/@metaplex-foundation/mpl-core@0.0.2/dist/mpl-core.css">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: 'Arial', sans-serif;
-      background: linear-gradient(135deg, #8B0000, #001F3F);
-      color: #DAA520;
-      text-align: center;
-      padding: 20px;
-      min-height: 100vh;
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{
+      background:linear-gradient(135deg,#0a001f,#1b0044,#2e0055);
+      color:#fff;font-family:'Orbitron',sans-serif;
+      min-height:100vh;display:flex;align-items:center;justify-content:center;
+      padding:20px;
     }
-    .logo {
-      font-size: 2.5rem;
-      color: #DAA520;
-      text-shadow: 0 0 10px #DAA520;
-      margin-bottom: 20px;
-      font-weight: bold;
+    .container{max-width:420px;width:100%}
+    h1{font-size:2.8rem;color:#00ff9d;margin-bottom:4px}
+    .tag{font-size:1rem;color:#aaa;margin-bottom:12px}
+    .price{font-size:2.2rem;color:#ffd700;font-weight:bold;margin:12px 0}
+    .stats{font-size:1rem;color:#ccc;margin-bottom:16px}
+    button{
+      width:100%;max-width:340px;margin:16px auto;padding:16px;
+      font-size:1.4rem;background:#ffd700;color:#000;border:none;
+      border-radius:14px;cursor:pointer;font-weight:bold;
+      box-shadow:0 0 20px rgba(255,215,0,.6);transition:.3s;
     }
-    .container {
-      max-width: 500px;
-      margin: 0 auto;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 30px;
-      border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(139, 0, 0, 0.5);
+    button:hover:not(:disabled){background:#ffed4e;transform:scale(1.04)}
+    button:disabled{background:#555;cursor:not-allowed;transform:none}
+    .status{margin-top:12px;font-size:.95rem;min-height:22px;font-weight:bold}
+    .loader{
+      display:inline-block;width:12px;height:12px;border:2px solid #ffd700;
+      border-radius:50%;border-top-color:transparent;
+      animation:s 1s linear infinite;margin-right:4px;
     }
-    h1 { color: #9ACD32; margin-bottom: 10px; }
-    p { margin-bottom: 20px; color: #DAA520; }
-    .quantity {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 10px;
-      margin: 20px 0;
-    }
-    button { 
-      padding: 10px 15px; 
-      background: #001F3F; 
-      color: #DAA520; 
-      border: 1px solid #9ACD32; 
-      border-radius: 5px; 
-      cursor: pointer; 
-      font-size: 1rem;
-      transition: all 0.3s;
-    }
-    button:hover { background: #9ACD32; color: #001F3F; }
-    #quantity { font-size: 1.5rem; color: #9ACD32; min-width: 50px; text-align: center; }
-    .total { font-size: 1.2rem; color: #DAA520; margin: 20px 0; }
-    #mintBtn { 
-      padding: 15px 30px; 
-      font-size: 1.2rem; 
-      background: #9ACD32; 
-      color: #001F3F; 
-      border: none;
-      border-radius: 50px;
-      cursor: pointer;
-      margin: 20px 0;
-    }
-    #mintBtn:hover { transform: scale(1.05); box-shadow: 0 5px 15px rgba(154, 205, 50, 0.5); }
-    .loading {
-      display: none;
-      border: 4px solid #DAA520;
-      border-top: 4px solid #001F3F;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
-    }
-    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .proof-section { display: none; background: rgba(0, 31, 63, 0.8); padding: 20px; border-radius: 10px; margin-top: 20px; }
-    input[type="file"], input[type="email"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #DAA520; border-radius: 5px; background: #001F3F; color: #DAA520; }
-    #sendProof { background: #DAA520; color: #001F3F; }
-    .sol-address { 
-      background: #8B0000; 
-      padding: 10px; 
-      border-radius: 5px; 
-      word-break: break-all; 
-      color: #9ACD32; 
-      margin: 10px 0;
-      cursor: pointer;
-    }
-    .sol-address:hover { background: #9ACD32; color: #001F3F; }
-    @media (max-width: 600px) { .logo { font-size: 2rem; } .container { padding: 20px; } }
+    @keyframes s{to{transform:rotate(360deg)}}
+    .wallets{margin-top:30px;font-size:.85rem;color:#777}
+    .mobile-tip{margin-top:12px;font-size:.85rem;color:#ff5555;display:none}
+    @media(max-width:600px){.mobile-tip{display:block}}
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="logo">Softfund (STFD)</div>
-    <h1>Mint Your STFD Tokens</h1>
-    <p>Mint STFD tokens at $1.0289 each. Pay in SOL to get started.</p>
-    
-    <div class="quantity">
-      <button onclick="updateQuantity(-1)">−</button>
-      <span id="quantity">1</span>
-      <button onclick="updateQuantity(1)">+</button>
-    </div>
-    
-    <div class="total">
-      Total: $<span id="totalUSD">1.0289</span> USD<br>
-      ≈ <span id="totalSOL">0.00001</span> SOL
-    </div>
-    
-    <div class="sol-address" onclick="copyAddress()">Send to: 6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu (Click to copy)</div>
-    
-    <button id="mintBtn" onclick="startMint()">Mint Tokens</button>
-    <div class="loading" id="loader"></div>
-    
-    <div class="proof-section" id="proofSection">
-      <h2>Upload Proof of Payment</h2>
-      <input type="file" id="proofFile" accept="image/*,.pdf" onchange="handleFile()">
-      <p>File: <span id="fileName"></span></p>
-      <input type="email" id="userEmail" placeholder="Your Email" required>
-      <button id="sendProof" onclick="sendProof()">Send to softfund939@gmail.com</button>
-    </div>
-    
-    <div id="successMsg" style="display:none; color:#9ACD32; margin-top:20px;"></div>
+    <h1>SOFTFUND</h1>
+    <p class="tag">USA-Based • Solana Utility NFTs</p>
+    <p class="price">2.5730 SOL</p>
+    <p class="stats">Minted: <span id="minted">--</span> / <span id="total">10,000</span></p>
+
+    <button id="mintBtn" disabled>
+      <span id="btnText">CONNECT WALLET</span>
+    </button>
+
+    <div id="status" class="status"></div>
+    <p class="mobile-tip">Open in Phantom or Trust Wallet</p>
+    <div class="wallets">Phantom • Trust Wallet</div>
   </div>
 
+  <!-- Solana + Metaplex -->
+  <script src="https://unpkg.com/@solana/web3.js@1.91.0/lib/index.iife.min.js"></script>
+  <script src="https://unpkg.com/@metaplex-foundation/js@0.19.3/dist/browser/index.js"></script>
+
   <script>
-    let quantity = 1;
-    const PRICE_USD = 1.0289;
-    const SOL_PRICE_USD = 186.64; // Current SOL price (update via API if needed)
-    
-    function updateQuantity(change) {
-      quantity = Math.max(1, quantity + change);
-      document.getElementById('quantity').textContent = quantity;
-      const totalUSD = (quantity * PRICE_USD).toFixed(4);
-      const totalSOL = (totalUSD / SOL_PRICE_USD).toFixed(6);
-      document.getElementById('totalUSD').textContent = totalUSD;
-      document.getElementById('totalSOL').textContent = totalSOL;
+    // ================= CONFIG =================
+    const PRICE_SOL = 2.5730;                                   // price per NFT
+    const CANDY_MACHINE_ID = "YOUR_CANDY_MACHINE_ID_HERE";      // <-- put your CM ID
+    const COLLECTION_PUBKEY = "YOUR_COLLECTION_PUBKEY_HERE";    // optional, for verified collection
+    const RPC_URL = "https://api.mainnet-beta.solana.com";
+    // =========================================
+
+    const PRICE = PRICE_SOL * 1e9; // lamports
+    let provider = null, connection = null, metaplex = null;
+    let isConnecting = false, mintedCount = 0, totalSupply = 10000;
+
+    const status = document.getElementById("status");
+    const btn = document.getElementById("mintBtn");
+    const btnText = document.getElementById("btnText");
+    const mintedEl = document.getElementById("minted");
+    const totalEl = document.getElementById("total");
+
+    // ---------- Helpers ----------
+    function setStatus(html, color) {
+      status.innerHTML = html;
+      status.style.color = color;
     }
-    
-    function copyAddress() {
-      navigator.clipboard.writeText('6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu');
-      alert('Address copied! Send your SOL and return with proof.');
-      // Opens Solana wallet link (e.g., Phantom) - customize if needed
-      window.open('https://phantom.app/ul/v1/pay/6v4DR5rkDFa3WdCQ35wvtfVYfk7i233Uiu6GmQ7JCdRu?amount=' + (quantity * PRICE_USD / SOL_PRICE_USD), '_blank');
+    function setButton(txt, enabled = true) {
+      btnText.textContent = txt;
+      btn.disabled = !enabled;
     }
-    
-    function startMint() {
-      document.getElementById('mintBtn').style.display = 'none';
-      document.getElementById('loader').style.display = 'block';
-      setTimeout(() => {
-        document.getElementById('loader').style.display = 'none';
-        document.getElementById('mintBtn').style.display = 'block';
-        document.getElementById('proofSection').style.display = 'block';
-        document.getElementById('successMsg').innerHTML = `Minted ${quantity} STFD tokens! Upload proof to claim.`;
-        document.getElementById('successMsg').style.display = 'block';
-      }, 2000); // Gold loading simulation
+
+    // ---------- Wallet ----------
+    function detectWallet() {
+      if (window.solana?.isPhantom) return window.solana;
+      if (window.trustwallet?.Provider?.solana) return window.trustwallet.Provider.solana;
+      if (window.solana) return window.solana;
+      return null;
     }
-    
-    let selectedFile = null;
-    function handleFile() {
-      selectedFile = document.getElementById('proofFile').files[0];
-      document.getElementById('fileName').textContent = selectedFile ? selectedFile.name : '';
-    }
-    
-    // Replace with your EmailJS credentials
-    emailjs.init('YOUR_EMAILJS_USER_ID');
-    
-    function sendProof() {
-      if (!selectedFile || !document.getElementById('userEmail').value) {
-        alert('Please select a file and enter your email!');
+
+    async function connectWallet() {
+      if (isConnecting) return;
+      isConnecting = true;
+      provider = detectWallet();
+
+      if (!provider) {
+        setStatus("Wallet not detected – open in Phantom/Trust", "#ff5555");
+        setButton("NO WALLET", false);
+        isConnecting = false;
         return;
       }
-      const formData = new FormData();
-      formData.append('file', selectedFile);
-      formData.append('email', document.getElementById('userEmail').value);
-      formData.append('quantity', quantity);
-      formData.append('totalUSD', document.getElementById('totalUSD').textContent);
-      
-      emailjs.send('YOUR_EMAILJS_SERVICE_ID', 'YOUR_EMAILJS_TEMPLATE_ID', {
-        to_email: 'softfund939@gmail.com',
-        from_email: document.getElementById('userEmail').value,
-        message: `Proof for ${quantity} STFD tokens ($${document.getElementById('totalUSD').textContent}). File attached.`,
-        attachment: selectedFile.name // Note: EmailJS doesn't attach files; use a service like SendGrid for real attachments or upload to Firebase first
-      }).then(() => {
-        alert('Proof sent! Check your email for confirmation.');
-        document.getElementById('proofSection').style.display = 'none';
-      }).catch(() => {
-        alert('Email failed—copy details and send manually to softfund939@gmail.com');
-      });
+
+      try {
+        setStatus("Connecting… <span class='loader'></span>", "#ffd700");
+        if (!provider.isConnected) await provider.connect();
+        setStatus("Wallet connected", "#00ff9d");
+        setButton("MINT NOW");
+        initMetaplex();
+        await loadCandyMachine();
+      } catch (e) {
+        setStatus("Connection rejected", "#ff5555");
+        setButton("RETRY");
+      } finally { isConnecting = false; }
     }
-    
-    // Fallback: Manual copy button if EmailJS not set up
-    document.getElementById('sendProof').addEventListener('click', () => {
-      if (!selectedFile) return;
-      const details = `Email: ${document.getElementById('userEmail').value}\nQuantity: ${quantity}\nTotal: $${document.getElementById('totalUSD').textContent}\nFile: ${selectedFile.name}`;
-      navigator.clipboard.writeText(details);
-      alert('Details copied! Paste into email to softfund939@gmail.com');
+
+    // ---------- Metaplex ----------
+    function initMetaplex() {
+      connection = new solanaWeb3.Connection(RPC_URL, "confirmed");
+      metaplex = new Metaplex(connection).use(walletAdapterIdentity(provider));
+    }
+
+    async function loadCandyMachine() {
+      try {
+        const cm = await metaplex.candyMachines().findByAddress({ address: new solanaWeb3.PublicKey(CANDY_MACHINE_ID) });
+        mintedCount = Number(cm.itemsMinted);
+        totalSupply = Number(cm.itemsAvailable);
+        mintedEl.textContent = mintedCount;
+        totalEl.textContent = totalSupply;
+
+        if (mintedCount >= totalSupply) {
+          setButton("SOLD OUT", false);
+          setStatus("All NFTs have been minted", "#ff5555");
+        }
+      } catch (e) {
+        console.error(e);
+        setStatus("Failed to load mint data", "#ff5555");
+      }
+    }
+
+    // ---------- Mint ----------
+    async function mint() {
+      if (mintedCount >= totalSupply) return;
+      setButton("MINTING…", false);
+      setStatus("Preparing transaction… <span class='loader'></span>", "#ffd700");
+
+      try {
+        const cm = await metaplex.candyMachines().findByAddress({ address: new solanaWeb3.PublicKey(CANDY_MACHINE_ID) });
+        const { nft } = await metaplex.candyMachines().mint({
+          candyMachine: cm,
+          collectionUpdateAuthority: COLLECTION_PUBKEY ? new solanaWeb3.PublicKey(COLLECTION_PUBKEY) : undefined,
+        });
+
+        mintedCount++;
+        mintedEl.textContent = mintedCount;
+        setStatus(`MINTED! <a href="https://solscan.io/token/${nft.address}" target="_blank" style="color:#00ff9d">View NFT</a>`, "#00ff9d");
+        setTimeout(() => { setButton(mintedCount >= totalSupply ? "SOLD OUT" : "MINT AGAIN"); setStatus("", ""); }, 3500);
+      } catch (err) {
+        console.error(err);
+        setStatus(err.message.includes("already minted") ? "You already minted (1 per wallet)" : "Mint failed", "#ff5555");
+        setButton("MINT NOW");
+      }
+    }
+
+    // ---------- Button ----------
+    btn.onclick = () => {
+      if (!provider?.isConnected) connectWallet();
+      else mint();
+    };
+
+    // ---------- Auto-connect ----------
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        if (detectWallet()) connectWallet();
+        else {
+          setStatus("Open in Phantom or Trust Wallet", "#ffaa00");
+          setButton("NO WALLET", false);
+        }
+      }, 600);
     });
   </script>
 </body>
