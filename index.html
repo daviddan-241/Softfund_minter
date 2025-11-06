@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Softfund (STFD) — Devnet Test</title>
+<title>Softfund (STFD) — </title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
 :root{--bg:#0f0f1a;--card:#121226;--accent:#00d4ff;--text:#e6eefc;--muted:#9fb0c8}
@@ -39,7 +39,6 @@ h1{text-align:center;margin-bottom:8px;font-weight:700}
   <div class="row">
     <div class="left">
       <div class="hero">
-        <!-- hero image uses CID that ends with y4le as you asked -->
         <img id="heroImg" src="https://gateway.lighthouse.storage/ipfs/bafkreidstjrabmghkjqwjcpct24g67flpybxs6gd7vpcg724upwibpy4le" alt="hero image">
       </div>
 
@@ -67,10 +66,10 @@ h1{text-align:center;margin-bottom:8px;font-weight:700}
         </div>
 
         <div style="margin-top:12px">
-          <button id="mintBtn" class="btn">MINT (Devnet)</button>
+          <button id="mintBtn" class="btn">MINT (Mainnet)</button>
         </div>
 
-        <div style="margin-top:12px" class="small">Recipient (Devnet): <span id="treasury" class="addr">3GM4KD2PJvmqx1MeMgT65Gkq7qqWu9bo9TpTcGgpyTPc</span>
+        <div style="margin-top:12px" class="small">Recipient (Mainnet): <span id="treasury" class="addr">3GM4KD2PJvmqx1MeMgT65Gkq7qqWu9bo9TpTcGgpyTPc</span>
           <button class="copy-btn" id="copyTreasury">Copy</button>
         </div>
 
@@ -84,7 +83,7 @@ h1{text-align:center;margin-bottom:8px;font-weight:700}
         </div>
 
         <div id="status" class="status"></div>
-        <div class="note">Open this page inside Phantom (Devnet) or host on HTTPS and open with Phantom extension on desktop.</div>
+        <div class="note">Open this page inside Phantom (Mainnet) or host on HTTPS and open with Phantom extension on desktop.</div>
       </div>
     </div>
 
@@ -103,17 +102,13 @@ h1{text-align:center;margin-bottom:8px;font-weight:700}
 
 <canvas id="confettiCanvas" class="canvas"></canvas>
 
-<!-- include solana web3 as IIFE/UMD to avoid module import/cors issues -->
 <script src="https://unpkg.com/@solana/web3.js@1.72.0/lib/index.iife.min.js"></script>
 
 <script>
-/* Wait for DOM to be ready */
 document.addEventListener('DOMContentLoaded', () => {
-  // sanity log
   console.log('Softfund page loaded');
 
-  // Using the IIFE build which exposes `solanaWeb3`
-  const { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } = window.solanaWeb3 || window.solanaWeb3 || {};
+  const { Connection, PublicKey, SystemProgram, Transaction, LAMPORTS_PER_SOL } = window.solanaWeb3 || {};
 
   if (!Connection) {
     console.error('Solana web3 not found (IIFE).');
@@ -121,11 +116,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // CONFIG (devnet)
+  // CONFIG (mainnet)
   const TREASURY = '3GM4KD2PJvmqx1MeMgT65Gkq7qqWu9bo9TpTcGgpyTPc';
   const PRICE_USD = 3.20;
   const TOTAL_CAP = 5000;
-  let minted = parseInt(localStorage.getItem('sf_minted_dev') || '0');
+  let minted = parseInt(localStorage.getItem('sf_minted_main') || '0');
   let quantity = 1;
   let SOL_PRICE = 150.0; // fallback
   const METADATA = [
@@ -134,25 +129,16 @@ document.addEventListener('DOMContentLoaded', () => {
     "bafkreidxd6q6vtpwboxr5eokewalr3ie7xmxjocny5m2ft66fayo5cd6im",
     "bafkreid7v5q6uetszdev5tmlrf2ma43tjfbova7gc7epuzt2lnbhcc4ijm",
     "bafkreidiimwvc36ekicyuxugmo7wcsdhvye3l3fz4l34lvs3lf44tsrqra",
-    "bafkreibiip2mn32hvppk4fpfcbob4rszyiamru5mazdpcbanihfylhnami",
-    "bafkreihhs2kunfn4dvwundezfqyksisjlqlrsqm77rypz6c7dmhwu3uy5y",
-    "bafkreidxd6q6vtpwboxr5eokewalr3ie7xmxjocny5m2ft66fayo5cd6im",
-    "bafkreifakecid000000000000000000000000000000000000000001",
-    "bafkreifakecid000000000000000000000000000000000000000002",
-    "bafkreifakecid000000000000000000000000000000000000000003",
-    "bafkreifakecid000000000000000000000000000000000000000004",
-    "bafkreifakecid000000000000000000000000000000000000000005",
-    "bafkreifakecid000000000000000000000000000000000000000006",
-    "bafkreifakecid000000000000000000000000000000000000000007",
-    "bafkreifakecid000000000000000000000000000000000000000008",
-    "bafkreifakecid000000000000000000000000000000000000000009",
-    "bafkreifakecid000000000000000000000000000000000000000010",
-    "bafkreifakecid000000000000000000000000000000000000000011",
-    "bafkreifakecid000000000000000000000000000000000000000012"
+    "bafkreibiip2mn32hvppk4fpfcbob4rszyiamru5mazdpcbanihfylhnami"
   ];
-  const STORAGE = { records: 'sf_records_dev', nextIdx: 'sf_nextidx_dev', minted: 'sf_minted_dev' };
+  const STORAGE = { records: 'sf_records_main', nextIdx: 'sf_nextidx_main', minted: 'sf_minted_main' };
 
-  // DOM refs
+  const connection = new Connection('https://api.mainnet-beta.solana.com', 'confirmed');
+
+  let provider = null;
+  let records = JSON.parse(localStorage.getItem(STORAGE.records) || "[]");
+  let nextIndex = parseInt(localStorage.getItem(STORAGE.nextIdx) || '0');
+
   const connectBtn = document.getElementById('connectBtn');
   const connectedEl = document.getElementById('connected');
   const decBtn = document.getElementById('dec');
@@ -171,13 +157,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyTreasury = document.getElementById('copyTreasury');
   const statusEl = document.getElementById('status');
 
-  const connection = new Connection('https://api.devnet.solana.com', 'confirmed');
-
-  let provider = null;
-  let records = JSON.parse(localStorage.getItem(STORAGE.records) || "[]");
-  let nextIndex = parseInt(localStorage.getItem(STORAGE.nextIdx) || '0');
-
-  // attach button listeners (guaranteed after DOM loaded)
   decBtn.addEventListener('click', () => { quantity = Math.max(1, quantity - 1); renderQuantity(); updatePrice(); });
   incBtn.addEventListener('click', () => { quantity = Math.min(10, quantity + 1); renderQuantity(); updatePrice(); });
   copyTreasury.addEventListener('click', () => { navigator.clipboard.writeText(TREASURY).then(()=>alert('Copied treasury')); });
@@ -193,16 +172,8 @@ document.addEventListener('DOMContentLoaded', () => {
         console.warn('connect cancelled', e);
         alert('Connect cancelled');
       }
-    } else if (window.backpack) {
-      try {
-        await window.backpack.connect();
-        provider = window.backpack;
-        connectedEl.textContent = 'Connected: ' + provider.publicKey.toString();
-      } catch (e) {
-        console.warn('backpack connect failed', e);
-      }
     } else {
-      alert('No Solana wallet detected. Open this page inside Phantom (Devnet) or use the Phantom extension for desktop and host the page on HTTPS.');
+      alert('No Solana wallet detected. Open inside Phantom (Mainnet) or on desktop via HTTPS.');
     }
   });
 
@@ -213,7 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         provider = window.solana;
         connectedEl.textContent = 'Connected: ' + provider.publicKey.toString();
         console.log('auto-connected');
-      } catch (e) { /* not trusted */ }
+      } catch (e) {}
     }
   }
 
@@ -224,7 +195,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const lamports = Math.round(totalSOL * LAMPORTS_PER_SOL);
 
     if (provider && provider.publicKey) {
-      if (!confirm(`Send ${totalSOL.toFixed(6)} SOL (devnet) to treasury? Approve in your wallet.`)) return;
+      if (!confirm(`Send ${totalSOL.toFixed(6)} SOL (mainnet) to treasury? Approve in your wallet.`)) return;
       mintBtn.disabled = true; mintBtn.textContent = 'Waiting for approval...'; statusEl.textContent = '';
       try {
         const fromPubkey = provider.publicKey;
@@ -233,13 +204,11 @@ document.addEventListener('DOMContentLoaded', () => {
         tx.feePayer = fromPubkey;
         tx.recentBlockhash = (await connection.getRecentBlockhash()).blockhash;
 
-        // sign & send
         const signed = await provider.signTransaction(tx);
         const raw = signed.serialize();
         const sig = await connection.sendRawTransaction(raw);
         await connection.confirmTransaction(sig, 'confirmed');
 
-        // update state & gallery
         const recs = JSON.parse(localStorage.getItem(STORAGE.records) || "[]");
         const assigned = [];
         for (let i = 0; i < quantity; i++) {
@@ -259,50 +228,18 @@ document.addEventListener('DOMContentLoaded', () => {
         statusEl.textContent = 'Confirmed — tx: ' + sig;
         fireConfetti();
         proofSection.style.display = 'block';
-        if (assigned.length) {
-          heroImg.style.opacity = 0.3;
-          setTimeout(()=>{ heroImg.src = `https://gateway.lighthouse.storage/ipfs/${assigned[assigned.length-1].cid}`; heroImg.style.opacity = 1; }, 350);
-        }
       } catch (err) {
         console.error('tx error', err);
         alert('Transaction failed or cancelled: ' + (err?.message || err));
       } finally {
-        mintBtn.disabled = false; mintBtn.textContent = 'MINT (Devnet)';
+        mintBtn.disabled = false; mintBtn.textContent = 'MINT (Mainnet)';
         updateUI();
       }
     } else {
-      if (!confirm('No wallet connected. Simulate mint instead?')) return;
-      const recs = JSON.parse(localStorage.getItem(STORAGE.records) || "[]");
-      const assigned = [];
-      for (let i=0;i<quantity;i++) {
-        if (minted >= TOTAL_CAP) break;
-        const cid = METADATA[nextIndex % METADATA.length];
-        const id = recs.length + 1;
-        recs.push({ id, cid, tx: null, ts: Date.now() });
-        assigned.push({ id, cid });
-        nextIndex = (nextIndex + 1) % METADATA.length;
-        minted++;
-      }
-      localStorage.setItem(STORAGE.records, JSON.stringify(recs));
-      localStorage.setItem(STORAGE.nextIdx, String(nextIndex));
-      localStorage.setItem(STORAGE.minted, String(minted));
-      records = recs;
-      renderGallery(); updateUI();
-      statusEl.textContent = 'Simulated assign';
-      fireConfetti();
-      proofSection.style.display = 'block';
+      alert('No wallet connected.');
     }
   });
 
-  document.getElementById('sendProof').addEventListener('click', () => {
-    const f = document.getElementById('proofFile').files[0];
-    const e = document.getElementById('proofEmail').value;
-    if (!f || !e) return alert('file & email required');
-    alert('Proof recorded (demo)');
-    proofSection.style.display = 'none';
-  });
-
-  // helper UI functions
   function renderQuantity() { quantityEl.textContent = quantity; }
   function updateUI() {
     renderQuantity();
@@ -345,7 +282,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loop(); setTimeout(()=>{ cancelAnimationFrame(raf); ctx.clearRect(0,0,canvas.width,canvas.height); },3500);
   }
 
-  // fetch price
   (async function fetchSOLPrice(){
     try {
       const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd');
@@ -355,11 +291,10 @@ document.addEventListener('DOMContentLoaded', () => {
     updateUI();
   })();
 
-  // try autoconnect and initial render
   tryAutoConnect();
   renderGallery();
   updateUI();
-  console.log('Softfund Devnet page initialized');
+  console.log('Softfund Mainnet page initialized');
 });
 </script>
 </body>
